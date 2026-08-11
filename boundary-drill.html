@@ -65,6 +65,18 @@
   .eyebrow{font-size:10.5px;font-weight:700;text-transform:uppercase;
     letter-spacing:.09em;color:var(--muted)}
 
+  .countdown{font-size:11.5px;font-weight:650;font-variant-numeric:tabular-nums;
+    background:var(--chip);color:var(--ink-2);padding:3px 10px;border-radius:20px;white-space:nowrap}
+  .countdown.near{background:var(--warning);color:#0b0b0b}
+  .countdown.taper{background:var(--critical);color:#fff}
+
+  .taper{display:none;flex-direction:column;gap:7px;border-radius:10px;padding:11px 14px;
+    font-size:12.5px;line-height:1.5;background:var(--critical-wash);border:1px solid var(--critical)}
+  .taper.on{display:flex}
+  .taper b{font-weight:650}
+  .taper .sweepbar{height:7px;background:var(--rule);border-radius:4px;overflow:hidden}
+  .taper .sweepfill{height:100%;background:var(--critical);border-radius:4px;min-width:3px}
+
   /* ---------- controls ---------- */
   .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .seg{display:inline-flex;border:1px solid var(--hair);border-radius:9px;overflow:hidden}
@@ -274,6 +286,7 @@
   <div class="mast">
     <h1>Boundary Drill</h1>
     <span class="sub">SY0-701 · all five domains · classify, don't recall</span>
+    <span class="countdown" id="countdown"></span>
     <span class="spacer"></span>
     <div class="seg" role="group" aria-label="View">
       <button type="button" data-view="drill" aria-pressed="true">Drill</button>
@@ -293,6 +306,8 @@
     </div>
     <button type="button" class="linkbtn" id="reset">Reset progress</button>
   </div>
+
+  <div class="taper" id="taper"></div>
 
   <div class="repair" id="repair">
     <span>Boundary repair — <b id="repair-name"></b></span>
@@ -1613,6 +1628,35 @@ const GLOSSARY = [
 const KEY = "secplus-boundary-drill-v2";
 const WINDOW = 10;   // band on the last N FIRST exposures
 const TRUST  = 10;   // attempts before a band is treated as real
+
+/* ---- exam date ------------------------------------------------------
+   Booked for Friday 25 September 2026. Everything below keys off this:
+   the countdown, the recency weighting, and the final-week sweep that
+   guarantees every boundary is touched before exam day.
+   Change this one line if the appointment moves.                      */
+const EXAM = null;   // set to e.g. new Date(2027, 2, 14) for a countdown + final-week coverage sweep
+const STALE_DAYS = 10;                     // nothing goes longer than this untouched
+const TAPER_DAYS = 7;                      // final-week sweep window
+
+function today0(){ const d = new Date(); d.setHours(0,0,0,0); return d; }
+function daysToExam(){ return EXAM ? Math.round((EXAM - today0()) / 864e5) : null; }
+function inTaper(){ const d = daysToExam(); return d !== null && d >= 0 && d <= TAPER_DAYS; }
+
+/* Dates are stored and compared in LOCAL time throughout.
+   toISOString() would convert to UTC, so an evening session west of UTC
+   would stamp tomorrow's date and produce a negative age. */
+function todayISO(){
+  const d = new Date(), p = n => String(n).padStart(2, "0");
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+}
+function parseLocal(iso){
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(y, m - 1, d); dt.setHours(0,0,0,0); return dt;
+}
+function daysSince(iso){
+  if(!iso) return null;
+  return Math.max(0, Math.round((today0() - parseLocal(iso)) / 864e5));
+}
 let stats = load();
 let domFilter = "all";
 let current = null;
@@ -1668,13 +1712,33 @@ function pool(){
 }
 function boundaryWeight(b){
   const st = statFor(b);
-  if(st.fseen === 0) return 3;                // unseen: surface it early
-  if(isProvisional(st)) return 2.5;           // fewer than TRUST first exposures
-  const acc = bandAcc(st);
-  if(acc === null)   return 2.5;
-  if(acc < 0.6)      return 4;                // not held
-  if(acc < 0.8)      return 2.5;              // shaky
-  return 1;                                   // holding — keep ticking over
+  const age = daysSince(st.last);
+
+  // Final week: sweep. Anything not yet touched in the taper window
+  // outranks everything else, so all 47 boundaries get seen before exam day.
+  if(inTaper()){
+    const touchedInTaper = age !== null && age <= TAPER_DAYS;
+    if(!touchedInTaper) return 8;             // untouched this week — sweep it in
+  }
+
+  let w;
+  if(st.fseen === 0)          w = 3;          // unseen: surface it early
+  else if(isProvisional(st))  w = 2.5;        // fewer than TRUST first exposures
+  else {
+    const acc = bandAcc(st);
+    if(acc === null)     w = 2.5;
+    else if(acc < 0.6)   w = 4;               // not held
+    else if(acc < 0.8)   w = 2.5;             // shaky
+    else                 w = 1;               // holding — keep ticking over
+  }
+
+  // Recency: accuracy alone has no concept of time, so a boundary answered
+  // three weeks ago ranks identically to one answered this morning.
+  if(age !== null){
+    if(age >= STALE_DAYS) return Math.max(w, 5);        // hard floor — never let it rot
+    w *= 1 + age / 3;
+  }
+  return Math.min(w, 8);
 }
 function pick(){
   const p = pool();
@@ -1744,8 +1808,48 @@ function render(){
   });
 
   $("fb").classList.remove("on");
+  renderCountdown();
   renderRepair();
   renderStats();
+}
+
+/* Countdown + the final-week sweep. In the last 7 days the job stops being
+   "improve the weak boundaries" and becomes "make sure none of the 47 is cold
+   on exam morning" — so this tracks coverage rather than accuracy. */
+function renderCountdown(){
+  const el = $("countdown"), t = $("taper");
+  if(!EXAM){                                   // no date set — countdown and taper are simply off
+    el.textContent = ""; el.className = "countdown"; el.style.display = "none";
+    t.classList.remove("on"); t.innerHTML = "";
+    return;
+  }
+  const d = daysToExam();
+  const fmt = EXAM.toLocaleDateString(undefined, {weekday:"short", day:"numeric", month:"short"});
+
+  if(d < 0){ el.textContent = "exam passed — " + fmt; el.className = "countdown"; }
+  else if(d === 0){ el.textContent = "exam today"; el.className = "countdown taper"; }
+  else {
+    el.textContent = d + (d === 1 ? " day · " : " days · ") + fmt;
+    el.className = "countdown" + (inTaper() ? " taper" : (d <= 14 ? " near" : ""));
+  }
+
+  if(!inTaper() || d < 0){ t.classList.remove("on"); t.innerHTML = ""; return; }
+
+  const all = Object.keys(B);
+  const touched = all.filter(b => {
+    const age = daysSince(statFor(b).last);
+    return age !== null && age <= TAPER_DAYS;
+  });
+  const pct = Math.round(touched.length / all.length * 100);
+  const missing = all.length - touched.length;
+
+  t.classList.add("on");
+  t.innerHTML =
+    "<span><b>Taper — " + (d === 0 ? "exam today" : d + " day" + (d===1?"":"s") + " left") + ".</b> " +
+    "No new material. The drill is now sweeping for coverage, not improvement: " +
+    "<b>" + touched.length + " of " + all.length + "</b> boundaries touched this week" +
+    (missing ? ", <b>" + missing + "</b> still cold." : " — all covered.") + "</span>" +
+    '<span class="sweepbar"><span class="sweepfill" style="width:' + Math.max(3,pct) + '%"></span></span>';
 }
 
 function renderRepair(){
@@ -1776,6 +1880,7 @@ function answer(choice, btn){
   const firstExposure = !views[id];
   views[id] = (views[id] || 0) + 1;
 
+  st.last = todayISO();
   st.seen++; if(ok) st.right++;
   if(firstExposure){
     st.fseen++; if(ok) st.fright++;
@@ -1826,6 +1931,7 @@ function answer(choice, btn){
     if(repairDone >= REPAIR_N) repairCleared = true;
   }
 
+  renderCountdown();
   renderRepair();
   renderStats();
   $("fb").classList.add("on");

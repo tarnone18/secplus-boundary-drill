@@ -62,7 +62,28 @@ your exam score.
 **Bands under 10 first answers are marked provisional.** At a 4-option guess floor, five attempts cannot
 distinguish a 60% boundary from an 85% one.
 
+**Selection is recency-aware.** Accuracy alone has no concept of time, so a boundary answered three weeks
+ago would otherwise rank identically to one answered this morning. Weight rises with days since last seen,
+and nothing is allowed to go more than 10 days untouched.
+
 Options are shuffled on every render, so you can't encode button positions.
+
+## Optional: set your exam date
+
+Near the top of the script block:
+
+```js
+const EXAM = null;   // set to e.g. new Date(2027, 2, 14)
+```
+
+Set it — month is 0-indexed, so `2` is March — and two things switch on:
+
+- a **countdown** in the header, amber inside two weeks and red in the final week;
+- a **final-week coverage sweep**. In the last 7 days the scheduler stops chasing your weakest boundaries and
+  starts prioritising any boundary you have *not* touched that week, so none of the 47 is cold on exam
+  morning. A banner tracks how many remain.
+
+Leave it `null` and both features stay off; everything else works unchanged.
 
 ## Glossary
 
@@ -73,7 +94,7 @@ each, and AV means antivirus *or* asset value depending on the domain.
 
 ## Usage
 
-Number keys `1`–`9` select an answer. `Enter` advances. The domain filter restricts the pool to one domain
+Number keys `1`-`9` select an answer. `Enter` advances. The domain filter restricts the pool to one domain
 and scopes the stats with it. "Reset progress" clears everything.
 
 Works on phones — one option per row, 48px targets, and it can be added to the home screen to run
