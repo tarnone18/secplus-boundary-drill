@@ -1620,7 +1620,32 @@ const GLOSSARY = [
 ["WPS","Wi-Fi Protected Setup","PIN is brute-forceable — disable it."],
 ["XDR","Extended Detection and Response","Correlates detection across endpoint, network and cloud."],
 ["XSS","Cross-Site Scripting","Injected script runs in another user's browser. Compare CSRF."],
-["ZTA","Zero Trust Architecture","No implicit trust from network location; verify every request."]
+["ZTA","Zero Trust Architecture","No implicit trust from network location; verify every request."],
+
+/* --- completing pairs and sets already present above --- */
+["MTTF","Mean Time to Failure","For non-repairable components. MTBF is between failures on repairable ones; MTTR is time to fix."],
+["FAR","False Acceptance Rate","Biometric measure — impostors wrongly accepted. The security risk. FRR is the inverse."],
+["CER","Crossover Error Rate","Where FAR and FRR meet; the lower the CER, the more accurate the biometric system."],
+["802.1X","Port-based Network Access Control","Authenticates a device before the switch port passes traffic. Uses EAP, usually with RADIUS behind it."],
+["KMS","Key Management Service","Centralized creation, rotation and access control for keys. Compare TPM (one device) and HSM (dedicated appliance)."],
+["FTPS","FTP Secure","FTP wrapped in TLS, ports 989/990. Distinct from SFTP, which is a different protocol running over SSH on 22."],
+["PAT","Port Address Translation","Many private hosts share one public IP, distinguished by port. The common form of NAT overload."],
+["SNAT","Source Network Address Translation","Rewrites the source address on the way out. DNAT rewrites the destination on the way in."],
+["IMAP","Internet Message Access Protocol","Port 143, or 993 over TLS. Leaves mail on the server, unlike POP3."],
+["POP3","Post Office Protocol v3","Port 110, or 995 over TLS. Traditionally downloads and deletes; IMAP syncs instead."],
+["NIPS","Network-based Intrusion Prevention System","Inline and blocking, unlike NIDS which only observes."],
+["WIDS","Wireless Intrusion Detection System","Detects rogue APs, evil twins and deauth floods."],
+["WIPS","Wireless Intrusion Prevention System","As WIDS, but can actively contain a rogue AP."],
+["SWG","Secure Web Gateway","URL filtering, malware inspection and policy for outbound web traffic. Often a component of SASE."],
+["MSP","Managed Service Provider","Runs IT operations for a client. An MSSP is the security-specific form."],
+["IRP","Incident Response Plan","The documented plan itself, as distinct from IR the activity."],
+["VoIP","Voice over IP","Carried by RTP; SRTP is the encrypted form."],
+["SRTP","Secure Real-time Transport Protocol","Encrypted RTP for voice and video."],
+["PKCS","Public Key Cryptography Standards","Family of formats — PKCS#12 (.p12/.pfx) bundles a certificate with its private key."],
+["PEM","Privacy Enhanced Mail","Base64 certificate format, the ----BEGIN CERTIFICATE---- one. DER is the binary equivalent."],
+["NFC","Near Field Communication","Centimetre-range wireless — contactless payment and badges. Skimming and relay are the attacks."],
+["CRC","Cyclic Redundancy Check","Detects accidental transmission errors. Not a security control — it stops corruption, not tampering."],
+["OTA","Over the Air","Firmware or config pushed wirelessly. Unsigned OTA updates are an attack path."]
 ];
 
 /* ============================================================

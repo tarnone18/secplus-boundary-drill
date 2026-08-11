@@ -24,7 +24,7 @@ immediately.
 
 ## What's in it
 
-**47 boundaries · 338 scenarios · 194 acronyms**, covering all five SY0-701 domains.
+**47 boundaries · 338 scenarios · 217 acronyms**, covering all five SY0-701 domains.
 
 | Domain | Boundaries | Scenarios |
 |---|---|---|
@@ -94,7 +94,7 @@ Leave it `null` and both features stay off; everything else works unchanged.
 
 ## Glossary
 
-A second view holds 194 acronyms, searchable across the abbreviation, the expansion *and* the explanation —
+A second view holds 217 acronyms, searchable across the abbreviation, the expansion *and* the explanation —
 so searching `kerberos` surfaces KDC, TGT and NTP, not just an exact match. Where an acronym is genuinely
 ambiguous on the exam it says so rather than picking one: MAC has three meanings, RBAC two, SAN and SOC two
 each, and AV means antivirus *or* asset value depending on the domain.
