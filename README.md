@@ -52,14 +52,21 @@ distinction you've just demonstrated you don't hold.
 **Selection is weighted by measured miss rate.** Unseen and sub-60% boundaries surface roughly 4× as often as
 ones you're holding at 80%+. Unseen *scenarios* are strongly preferred over ones you've already answered.
 
-**Scoring counts first exposures only.** This is the important one. A large enough question pool still gets
-memorised eventually, and when it does your in-app accuracy climbs while your real ability doesn't. So bands
-are computed from your **first** attempt at each scenario, over a rolling window of the last 10 — and the
-tool shows your first-try accuracy against your repeat accuracy. If the gap exceeds 20 points it tells you
+**Scoring counts cold attempts only.** This is the important one. Any finite pool gets memorised eventually,
+and when it does your in-app accuracy climbs while your real ability doesn't. So a scenario scores toward
+your band only when it is **cold** — never seen, or not seen for 14 days. Anything sooner is a same-week
+repeat, tracked separately and excluded from the band.
+
+The 14-day rule matters at volume. Scoring *true first exposures only* would freeze your stats once the pool
+is used up — at an hour a night that happens in about two weeks, after which the numbers would show where you
+were a fortnight ago. Re-testing an item you last saw two weeks back is genuine retrieval, so it re-qualifies
+and the band stays alive.
+
+The tool shows **cold accuracy against same-week repeat accuracy**. If the gap exceeds 20 points it says
 plainly that you're recalling scenarios rather than judging boundaries, and that the repeat number is not
 your exam score.
 
-**Bands under 10 first answers are marked provisional.** At a 4-option guess floor, five attempts cannot
+**Bands under 10 cold answers are marked provisional.** At a 4-option guess floor, five attempts cannot
 distinguish a 60% boundary from an 85% one.
 
 **Selection is recency-aware.** Accuracy alone has no concept of time, so a boundary answered three weeks

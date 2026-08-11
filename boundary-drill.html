@@ -337,9 +337,10 @@
 
   <div class="stats">
     <h2>Boundary accuracy</h2>
-    <p class="lede">Scored on <b>first exposures only</b>, most recent 10. Weakest boundaries are served more
-      often. Under 10 first answers a boundary shows as provisional — five attempts cannot separate a 60%
-      boundary from an 85% one.</p>
+    <p class="lede">Scored on <b>cold attempts only</b> — a scenario you've never seen, or haven't seen for
+      14 days — most recent 10. Same-week repeats are tracked separately and never touch the band. Under 10
+      cold answers a boundary shows as provisional; five attempts cannot separate a 60% boundary from an
+      85% one.</p>
     <div class="alarm" id="alarm"></div>
     <div class="rows" id="rows"></div>
     <div class="legend">
@@ -1625,9 +1626,17 @@ const GLOSSARY = [
 /* ============================================================
    STATE
    ============================================================ */
-const KEY = "secplus-boundary-drill-v2";
-const WINDOW = 10;   // band on the last N FIRST exposures
-const TRUST  = 10;   // attempts before a band is treated as real
+const KEY = "secplus-boundary-drill-v3";
+const WINDOW = 10;   // band on the last N COLD attempts
+const TRUST  = 10;   // cold attempts before a band is treated as real
+
+/* A scenario counts as COLD if you have never seen it, or have not seen it for
+   COLD_DAYS. Scoring only true first-exposures freezes the stats once the pool
+   is used up — at an hour a night that happens in about two weeks. Re-testing
+   an item you last saw a fortnight ago is genuine retrieval, not recognition,
+   so it re-qualifies. Anything sooner is a massed repeat and is tracked
+   separately: cold-vs-repeat is the memorization alarm. */
+const COLD_DAYS = 14;
 
 /* ---- exam date ------------------------------------------------------
    Booked for Friday 25 September 2026. Everything below keys off this:
@@ -1692,9 +1701,16 @@ function statFor(b){
   if(!s.win) s.win = [];                      // tolerate older saved shapes
   return s;
 }
+/* itemId -> {n: times seen, last: "YYYY-MM-DD"} */
 function itemViews(){
   if(!stats.__items) stats.__items = {};
   return stats.__items;
+}
+function isCold(id){
+  const rec = itemViews()[id];
+  if(!rec) return true;                          // never seen
+  const age = daysSince(rec.last);
+  return age === null || age >= COLD_DAYS;       // gone cold again
 }
 /* Band on the rolling window of first exposures, not lifetime accuracy —
    a cumulative average after 40 trials cannot detect a decline. */
@@ -1748,21 +1764,21 @@ function pick(){
 
   if(repairBoundary){
     let rep = p.filter(it => it.b === repairBoundary && idOf(it) !== lastId);
-    // repair on scenarios he has NOT seen — re-serving a known item
+    // repair on scenarios that are cold — re-serving one seen this week
     // tests recall of that item, not the boundary
-    const fresh = rep.filter(it => !views[idOf(it)]);
+    const fresh = rep.filter(it => isCold(idOf(it)));
     if(fresh.length) rep = fresh;
     if(rep.length) return rep[Math.floor(Math.random()*rep.length)];
   }
 
   const weighted = [];
   p.forEach(it => {
-    if(idOf(it) === lastId) return;
+    const id = idOf(it);
+    if(id === lastId) return;
     const w = boundaryWeight(it.b);
-    const v = views[idOf(it)] || 0;
-    // strongly favour first exposures: a re-seen scenario measures recall
-    // of that scenario, not the category judgement underneath it
-    const freshness = v === 0 ? 3 : 1 / (1 + v);
+    // strongly favour cold scenarios: a recently-seen one measures recall of
+    // that scenario rather than the category judgement underneath it
+    const freshness = isCold(id) ? 3 : 1 / (1 + (views[id] ? views[id].n : 0));
     for(let i=0;i<Math.max(1, Math.round(w * freshness * 2));i++) weighted.push(it);
   });
   const from = weighted.length ? weighted : p;
@@ -1877,12 +1893,13 @@ function answer(choice, btn){
   const st = statFor(current.b);
   const views = itemViews();
   const id = idOf(current);
-  const firstExposure = !views[id];
-  views[id] = (views[id] || 0) + 1;
+  const cold = isCold(id);
+  const rec = views[id] || {n:0, last:null};
+  views[id] = {n: rec.n + 1, last: todayISO()};
 
   st.last = todayISO();
   st.seen++; if(ok) st.right++;
-  if(firstExposure){
+  if(cold){
     st.fseen++; if(ok) st.fright++;
     st.win.push(ok ? 1 : 0);
     if(st.win.length > WINDOW) st.win.shift();
@@ -1964,11 +1981,11 @@ function renderAlarm(scope){
   el.className = "alarm on " + (bad ? "warn" : "ok");
   el.innerHTML =
     '<span class="mark">' + (bad ? "!" : "✓") + "</span><span>" +
-    "<b>First-try " + Math.round(first*100) + "% · repeat " + Math.round(rep*100) + "%</b> — " +
+    "<b>Cold " + Math.round(first*100) + "% · same-week repeat " + Math.round(rep*100) + "%</b> — " +
     (bad
       ? "a gap this wide means you are recalling these scenarios rather than judging the boundary. " +
-        "The repeat number is not your exam score. Trust the first-try figure."
-      : "the two are close, so the first-try number is measuring the boundary rather than your memory " +
+        "The repeat number is not your exam score. Trust the cold figure."
+      : "the two are close, so the cold number is measuring the boundary rather than your memory " +
         "of these particular scenarios.") +
     "</span>";
 }
@@ -2016,8 +2033,8 @@ function renderStats(){
         if(isProvisional(st)){
           nm.innerHTML += ' <span class="prov">provisional · ' + st.fseen + "/" + TRUST + "</span>";
         }
-        val.title = st.fright + " of " + st.fseen + " first exposures — " + bandName(acc) +
-                    (st.rseen ? " · repeats " + st.rright + "/" + st.rseen : "");
+        val.title = st.fright + " of " + st.fseen + " cold attempts — " + bandName(acc) +
+                    (st.rseen ? " · same-week repeats " + st.rright + "/" + st.rseen : "");
       }
       row.appendChild(nm); row.appendChild(track); row.appendChild(val);
       rows.appendChild(row);
