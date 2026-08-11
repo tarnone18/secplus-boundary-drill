@@ -1,0 +1,2038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Security+">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fcfcfb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1a1a19" media="(prefers-color-scheme: dark)">
+<title>Security+ SY0-701 — Boundary Drill</title>
+<style>
+  :root{
+    color-scheme: light;
+    --surface:#fcfcfb; --page:#f9f9f7;
+    --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+    --hair:rgba(11,11,11,0.10); --rule:#e1e0d9;
+    --accent:#2a78d6; --accent-ink:#ffffff; --accent-wash:rgba(42,120,214,0.08);
+    --good:#0ca30c; --warning:#fab219; --critical:#d03b3b;
+    --good-wash:rgba(12,163,12,0.09); --critical-wash:rgba(208,59,59,0.08);
+    --chip:#f0efec;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --surface:#1a1a19; --page:#0d0d0d;
+      --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+      --hair:rgba(255,255,255,0.10); --rule:#2c2c2a;
+      --accent:#3987e5; --accent-ink:#0d0d0d; --accent-wash:rgba(57,135,229,0.14);
+      --good:#0ca30c; --warning:#fab219; --critical:#d03b3b;
+      --good-wash:rgba(12,163,12,0.14); --critical-wash:rgba(208,59,59,0.14);
+      --chip:#262624;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --surface:#1a1a19; --page:#0d0d0d;
+    --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+    --hair:rgba(255,255,255,0.10); --rule:#2c2c2a;
+    --accent:#3987e5; --accent-ink:#0d0d0d; --accent-wash:rgba(57,135,229,0.14);
+    --good-wash:rgba(12,163,12,0.14); --critical-wash:rgba(208,59,59,0.14);
+    --chip:#262624;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--page); color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:15px; line-height:1.5;
+    padding:28px 18px 72px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+
+  /* ---------- masthead ---------- */
+  .mast{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
+    border-bottom:1px solid var(--rule);padding-bottom:14px}
+  .mast h1{font-size:19px;font-weight:650;margin:0;letter-spacing:-.01em}
+  .mast .sub{font-size:12.5px;color:var(--muted)}
+  .mast .spacer{margin-left:auto}
+
+  .eyebrow{font-size:10.5px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.09em;color:var(--muted)}
+
+  /* ---------- controls ---------- */
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .seg{display:inline-flex;border:1px solid var(--hair);border-radius:9px;overflow:hidden}
+  .seg button{
+    background:transparent;border:0;padding:6px 13px;font:inherit;font-size:12.5px;
+    color:var(--ink-2);cursor:pointer;
+  }
+  .seg button + button{border-left:1px solid var(--hair)}
+  .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+  .seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .linkbtn{background:none;border:0;color:var(--muted);font:inherit;font-size:12.5px;
+    cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:6px 2px}
+  .linkbtn:hover{color:var(--ink)}
+  .linkbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+  /* ---------- repair banner ---------- */
+  .repair{
+    display:none;align-items:center;gap:10px;
+    background:var(--accent-wash);border:1px solid var(--accent);
+    border-radius:10px;padding:9px 14px;font-size:13px;color:var(--ink);
+  }
+  .repair.on{display:flex}
+  .repair b{font-weight:650}
+  .repair .pips{margin-left:auto;display:flex;gap:5px}
+  .repair .pip{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--accent)}
+  .repair .pip.done{background:var(--accent)}
+
+  /* ---------- scenario card ---------- */
+  .card{
+    background:var(--surface);border:1px solid var(--hair);border-radius:14px;
+    padding:26px 28px;display:flex;flex-direction:column;gap:16px;
+  }
+  .card-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .dtag{font-size:10.5px;font-weight:700;letter-spacing:.05em;
+    background:var(--chip);color:var(--ink-2);padding:2px 8px;border-radius:20px}
+  .counter{margin-left:auto;font-size:12px;color:var(--muted);
+    font-variant-numeric:tabular-nums}
+
+  .scenario{
+    font-family:Georgia,"Iowan Old Style","Palatino Linotype",Palatino,serif;
+    font-size:18px;line-height:1.62;max-width:62ch;margin:0;
+    text-wrap:pretty;
+  }
+  .prompt{font-size:13px;color:var(--ink-2);margin:0}
+
+  .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:9px}
+  .opt{
+    background:var(--surface);border:1px solid var(--hair);border-radius:10px;
+    padding:11px 14px;font:inherit;font-size:14px;color:var(--ink);
+    text-align:left;cursor:pointer;transition:border-color .12s,background .12s;
+  }
+  .opt:hover:not(:disabled){border-color:var(--accent);background:var(--accent-wash)}
+  .opt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .opt:disabled{cursor:default}
+  .opt.correct{border-color:var(--good);background:var(--good-wash);font-weight:600}
+  .opt.wrong{border-color:var(--critical);background:var(--critical-wash)}
+  .opt.muted-out{opacity:.45}
+
+  /* ---------- feedback ---------- */
+  .fb{display:none;flex-direction:column;gap:12px;border-top:1px solid var(--rule);padding-top:16px}
+  .fb.on{display:flex}
+  .verdict{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:650}
+  .verdict .mark{width:19px;height:19px;flex:none;border-radius:50%;display:grid;place-items:center;
+    font-size:12px;font-weight:800;color:#fff;line-height:1}
+  .verdict.ok .mark{background:var(--good)}
+  .verdict.no .mark{background:var(--critical)}
+  .verdict.ok{color:var(--good)}
+  .verdict.no{color:var(--critical)}
+
+  .boundary-rule{
+    background:var(--chip);border-radius:10px;padding:13px 15px;font-size:13.5px;line-height:1.55;
+  }
+  .boundary-rule .eyebrow{display:block;margin-bottom:5px}
+  .contrast{display:flex;flex-direction:column;gap:8px;font-size:13.5px;line-height:1.5}
+  .contrast div{padding-left:13px;border-left:2px solid var(--rule)}
+  .contrast .picked{border-left-color:var(--critical)}
+  .contrast .answer{border-left-color:var(--good)}
+  .contrast b{font-weight:650}
+  .next{align-self:flex-start;background:var(--accent);color:var(--accent-ink);
+    border:0;border-radius:9px;padding:9px 20px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+  .next:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+  /* ---------- stats ---------- */
+  .stats{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:22px 24px}
+  .stats h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+    margin:0 0 4px;font-weight:700}
+  .stats .lede{font-size:12.5px;color:var(--muted);margin:0 0 16px}
+  .rows{display:flex;flex-direction:column;gap:11px}
+  .row{display:grid;grid-template-columns:1fr 96px 62px;gap:12px;align-items:center;font-size:13px}
+  .row .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .nm small{color:var(--muted);font-size:11px;margin-left:5px}
+  .track{height:9px;background:var(--rule);border-radius:5px;overflow:hidden}
+  .fill{height:100%;border-radius:5px;min-width:3px}
+  .val{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2);font-size:12.5px;
+    display:flex;align-items:center;justify-content:flex-end;gap:5px}
+  .band{width:8px;height:8px;border-radius:2px;flex:none}
+  .unseen{color:var(--muted)}
+  .prov{color:var(--muted);font-size:11px;font-style:italic}
+  .alarm{display:none;gap:10px;align-items:flex-start;border-radius:10px;padding:11px 14px;
+    font-size:12.5px;line-height:1.5;margin-bottom:14px}
+  .alarm.on{display:flex}
+  .alarm.ok{background:var(--good-wash);border:1px solid var(--good)}
+  .alarm.warn{background:var(--critical-wash);border:1px solid var(--critical)}
+  .alarm .mark{width:17px;height:17px;flex:none;border-radius:50%;display:grid;place-items:center;
+    font-size:11px;font-weight:800;color:#fff;line-height:1;margin-top:1px}
+  .alarm.ok .mark{background:var(--good)} .alarm.warn .mark{background:var(--critical)}
+  .alarm b{font-weight:650}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;padding-top:13px;
+    border-top:1px solid var(--rule);font-size:11.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:9px;height:9px;border-radius:2px;display:block}
+
+  .foot{font-size:12px;color:var(--muted);line-height:1.6}
+  .foot code{background:var(--chip);border-radius:4px;padding:1px 5px;font-size:11.5px}
+
+  /* ---------- views ---------- */
+  #view-drill,#view-glossary{display:flex;flex-direction:column;gap:20px}
+  [hidden]{display:none !important}
+
+  /* ---------- plan ---------- */
+  .panel{background:var(--surface);border:1px solid var(--hair);border-radius:14px;
+    padding:20px 22px;display:flex;flex-direction:column;gap:10px}
+  .panel p{margin:0;font-size:14px;line-height:1.55}
+  .panel .big{font-size:26px;font-weight:650;letter-spacing:-.02em;margin:2px 0 0}
+  .panel table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+  .panel th,.panel td{border-bottom:1px solid var(--rule);padding:6px 8px;text-align:left}
+  .panel th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+  .muted-note{color:var(--muted);font-size:12.5px !important}
+  .callout{background:var(--accent-wash);border-left:3px solid var(--accent);
+    border-radius:0 8px 8px 0;padding:10px 14px;font-size:14.5px !important}
+  .tier{font-size:13.5px;line-height:1.5;padding-left:13px;border-left:3px solid var(--rule)}
+  .tier.t1{border-left-color:var(--critical)}
+  .tier.t2{border-left-color:var(--warning)}
+  .tier.t3{border-left-color:var(--good)}
+  .stoplist,.steps,.gate{margin:0;padding-left:20px;font-size:13.5px;line-height:1.55}
+  .stoplist li,.steps li,.gate li{margin:6px 0}
+  .gate li{margin:7px 0}
+
+  /* ---------- glossary ---------- */
+  .search{
+    flex:1;min-width:0;background:var(--surface);color:var(--ink);
+    border:1px solid var(--hair);border-radius:9px;padding:9px 13px;font:inherit;font-size:14px;
+  }
+  .search:focus-visible{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
+  .gcount{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .glossary{background:var(--surface);border:1px solid var(--hair);border-radius:14px;
+    padding:8px 0;overflow:hidden}
+  .gletter{
+    position:sticky;top:0;background:var(--chip);color:var(--muted);
+    font-size:11px;font-weight:700;letter-spacing:.09em;padding:5px 24px;
+  }
+  .gentry{display:grid;grid-template-columns:104px 1fr;gap:14px;padding:9px 24px;
+    border-bottom:1px solid var(--rule);align-items:baseline}
+  .gentry:last-child{border-bottom:0}
+  .gab{font-weight:700;font-size:13.5px;letter-spacing:.01em;
+    font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+  .gtx{font-size:13.5px;line-height:1.5}
+  .gtx b{font-weight:600}
+  .gtx span{color:var(--ink-2)}
+  .gempty{padding:24px;text-align:center;color:var(--muted);font-size:13.5px}
+  @media (max-width:520px){
+    .gentry{grid-template-columns:1fr;gap:2px;padding:10px 16px}
+    .gletter{padding:5px 16px}
+  }
+
+  @media (prefers-reduced-motion: reduce){*{transition:none !important}}
+  /* ---------- phone ---------- */
+  @media (max-width:560px){
+    body{
+      padding:14px 12px calc(28px + env(safe-area-inset-bottom));
+      padding-left:calc(12px + env(safe-area-inset-left));
+      padding-right:calc(12px + env(safe-area-inset-right));
+    }
+    .wrap{gap:14px}
+    .mast{padding-bottom:11px;gap:8px}
+    .mast h1{font-size:17px}
+    .mast .sub{display:none}          /* reclaim the row for the view switcher */
+    .mast .spacer{display:none}
+    .seg{width:100%}
+    .seg button{flex:1;padding:9px 6px;font-size:13px}
+    .controls{gap:6px}
+    .controls .seg button{padding:9px 2px;font-size:12.5px}
+
+    .card{padding:18px 16px;gap:14px}
+    .scenario{font-size:17.5px;line-height:1.55}
+    /* one option per row, thumb-sized */
+    .opts{grid-template-columns:1fr;gap:8px}
+    .opt{padding:14px 15px;font-size:15px;min-height:48px}
+    .next{width:100%;padding:14px;font-size:15px;text-align:center}
+    .stats{padding:18px 16px}
+    .panel{padding:17px 16px}
+    .row{grid-template-columns:1fr 58px 52px;gap:9px}
+    .out-ts,.counter{font-size:11px}
+    .search{font-size:16px}            /* 16px stops iOS zooming on focus */
+  }
+  /* pointer-coarse devices get larger hit areas regardless of width */
+  @media (pointer:coarse){
+    .opt{min-height:46px}
+    .seg button{min-height:40px}
+    .linkbtn{padding:9px 4px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="mast">
+    <h1>Boundary Drill</h1>
+    <span class="sub">SY0-701 · all five domains · classify, don't recall</span>
+    <span class="spacer"></span>
+    <div class="seg" role="group" aria-label="View">
+      <button type="button" data-view="drill" aria-pressed="true">Drill</button>
+      <button type="button" data-view="glossary" aria-pressed="false">Glossary</button>
+    </div>
+  </div>
+
+<div id="view-drill">
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Domain filter">
+      <button type="button" data-dom="all" aria-pressed="true">All</button>
+      <button type="button" data-dom="1.0" aria-pressed="false">D1</button>
+      <button type="button" data-dom="2.0" aria-pressed="false">D2</button>
+      <button type="button" data-dom="3.0" aria-pressed="false">D3</button>
+      <button type="button" data-dom="4.0" aria-pressed="false">D4</button>
+      <button type="button" data-dom="5.0" aria-pressed="false">D5</button>
+    </div>
+    <button type="button" class="linkbtn" id="reset">Reset progress</button>
+  </div>
+
+  <div class="repair" id="repair">
+    <span>Boundary repair — <b id="repair-name"></b></span>
+    <span class="pips" id="repair-pips"></span>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="dtag" id="dtag">1.0</span>
+      <span class="eyebrow" id="bname">Control types</span>
+      <span class="counter" id="counter"></span>
+    </div>
+    <p class="scenario" id="scenario"></p>
+    <p class="prompt" id="prompt"></p>
+    <div class="opts" id="opts"></div>
+
+    <div class="fb" id="fb">
+      <div class="verdict" id="verdict"></div>
+      <div class="boundary-rule">
+        <span class="eyebrow">The boundary</span>
+        <span id="rule"></span>
+      </div>
+      <div class="contrast" id="contrast"></div>
+      <button type="button" class="next" id="next">Next scenario</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <h2>Boundary accuracy</h2>
+    <p class="lede">Scored on <b>first exposures only</b>, most recent 10. Weakest boundaries are served more
+      often. Under 10 first answers a boundary shows as provisional — five attempts cannot separate a 60%
+      boundary from an 85% one.</p>
+    <div class="alarm" id="alarm"></div>
+    <div class="rows" id="rows"></div>
+    <div class="legend">
+      <span><i style="background:var(--critical)"></i> Under 60% — not held</span>
+      <span><i style="background:var(--warning)"></i> 60–79% — shaky</span>
+      <span><i style="background:var(--good)"></i> 80%+ — holding</span>
+    </div>
+  </div>
+
+  <p class="foot">
+    Miss a scenario and the drill serves <b>three more on that same boundary</b> before moving on — the
+    three-novel-scenarios rule, automated. Progress saves in this browser only.
+  </p>
+</div>
+
+<div id="view-glossary" hidden>
+  <div class="controls">
+    <input type="search" id="gsearch" class="search" placeholder="Filter by acronym, term or meaning…"
+           autocomplete="off" spellcheck="false" aria-label="Filter glossary">
+    <span class="gcount" id="gcount"></span>
+  </div>
+  <div class="glossary" id="glist"></div>
+  <p class="foot">
+    The acronyms CompTIA publishes for SY0-701, plus the expansions worth knowing cold. Knowing what a
+    letter stands for is not the same as knowing the boundary it sits on — use the drill for that.
+  </p>
+</div>
+
+</div><!-- /.wrap -->
+
+<script>
+"use strict";
+
+/* ============================================================
+   BOUNDARIES — each carries the discriminating rule and short
+   definitions used to contrast a wrong pick against the answer.
+   ============================================================ */
+const B = {
+  "control-type": {
+    domain:"1.0", name:"Control types",
+    prompt:"Which control TYPE is this?",
+    rule:"Type is about <b>when and how</b> the control acts on the event — before it (preventive), by discouraging it (deterrent), during/after by noticing (detective), after by fixing (corrective), instead of an infeasible control (compensating), or by telling people what to do (directive).",
+    defs:{
+      "Preventive":"physically or logically stops the event from occurring",
+      "Deterrent":"discourages someone from attempting it, without blocking them",
+      "Detective":"identifies that it happened, during or after the fact",
+      "Corrective":"restores or repairs after the event has occurred",
+      "Compensating":"a substitute used because the primary control isn't feasible",
+      "Directive":"instructs or mandates human behaviour"
+    }
+  },
+  "control-category": {
+    domain:"1.0", name:"Control categories",
+    prompt:"Which control CATEGORY is this?",
+    rule:"Category is about <b>what implements it</b> — a system (technical), a management/oversight decision on paper (managerial), a person doing something routinely (operational), or a tangible barrier (physical). Category is a different axis from type; every control has both.",
+    defs:{
+      "Technical":"implemented by technology — software, hardware, configuration",
+      "Managerial":"an oversight, planning or governance instrument on paper",
+      "Operational":"carried out by people as part of day-to-day work",
+      "Physical":"a tangible object or barrier in the real world"
+    }
+  },
+  "risk-strategy": {
+    domain:"5.0", name:"Risk response",
+    prompt:"Which risk-management strategy is this?",
+    rule:"Ask what happened to the <b>risk itself</b>: moved to someone else (transfer), reduced by a control (mitigate), eliminated by stopping the activity (avoid), or knowingly retained with no action (accept). Buying insurance doesn't reduce the risk; cancelling the activity doesn't reduce it either — it removes it.",
+    defs:{
+      "Transfer":"shifts the financial or legal consequence to a third party",
+      "Accept":"knowingly retains the risk and takes no further action",
+      "Avoid":"eliminates the risk by not doing the activity at all",
+      "Mitigate":"reduces likelihood or impact by applying a control"
+    }
+  },
+  "agreement": {
+    domain:"5.0", name:"Agreement types",
+    prompt:"Which agreement type is this?",
+    rule:"Sort by <b>what the document is for</b>: performance promises (SLA), intent without binding force (MOU), binding roles and responsibilities (MOA), umbrella terms for an ongoing relationship (MSA), the specific deliverables under that umbrella (SOW), confidentiality (NDA), or the terms between business partners (BPA).",
+    defs:{
+      "SLA":"defines measurable service performance and the remedy if it's missed",
+      "MOU":"expresses shared intent — generally not legally binding",
+      "MOA":"a binding document defining each party's roles and responsibilities",
+      "MSA":"the umbrella contract governing all future work between the parties",
+      "SOW":"the specific deliverables, milestones and timeline for one engagement",
+      "NDA":"prohibits disclosure of confidential information",
+      "BPA":"sets the terms between business partners — profit, ownership, duties"
+    }
+  },
+  "data-role": {
+    domain:"5.0", name:"Data roles",
+    prompt:"Which data role is described?",
+    rule:"Ask <b>who decides</b> versus <b>who does</b>. The owner is accountable and classifies. The controller decides purpose and means. The processor acts only on the controller's instructions. The custodian/steward is hands-on — implementing what the owner decided.",
+    defs:{
+      "Data owner":"senior, accountable for the data and its classification",
+      "Data controller":"determines the purposes and means of processing",
+      "Data processor":"processes data on behalf of, and per instructions from, the controller",
+      "Data custodian / steward":"handles day-to-day technical protection and maintenance"
+    }
+  },
+  "bia-metric": {
+    domain:"5.0", name:"BIA metrics",
+    prompt:"Which continuity metric is this?",
+    rule:"RTO and RPO are <b>targets the business sets</b>; MTTR and MTBF are <b>measurements of what actually happens</b>. RTO looks forward in time (how fast back up), RPO looks backward (how much data lost).",
+    defs:{
+      "RTO":"target — how quickly service must be restored",
+      "RPO":"target — the maximum tolerable amount of data loss, measured in time",
+      "MTTR":"measurement — average time taken to repair and restore",
+      "MTBF":"measurement — average operating time between failures"
+    }
+  },
+  "governance-doc": {
+    domain:"5.0", name:"Policy vs standard vs procedure",
+    prompt:"Which governance document is this?",
+    rule:"Policy says <b>what and why</b> at a high level. Standard says <b>the specific mandatory requirement</b>. Procedure says <b>the steps</b>. Guideline is <b>advisory</b> — the one that isn't mandatory.",
+    defs:{
+      "Policy":"high-level mandatory statement of intent and responsibility",
+      "Standard":"a specific, mandatory, measurable requirement",
+      "Procedure":"ordered steps for carrying out a task",
+      "Guideline":"recommended practice — advisory, not enforced"
+    }
+  },
+  "assessment": {
+    domain:"5.0", name:"Audits and assessments",
+    prompt:"Which activity is this?",
+    rule:"Ask <b>who performs it and what it produces</b>: own staff reviewing controls (internal audit), an independent outside party examining them (external audit), a formal signed claim of compliance (attestation), or an active attempt to exploit (penetration test).",
+    defs:{
+      "Internal audit":"performed by the organization's own staff or audit committee",
+      "External audit":"performed by an independent outside firm or regulator",
+      "Attestation":"a formal signed statement asserting that controls are in place",
+      "Penetration test":"an authorized simulated attack demonstrating real exploitability"
+    }
+  },
+  "risk-quant": {
+    domain:"5.0", name:"Quantitative risk formulas",
+    prompt:"Which quantitative risk value is described?",
+    rule:"<b>SLE = AV × EF</b> (one event). <b>ALE = SLE × ARO</b> (per year). EF is the <i>percentage</i> of the asset lost; ARO is the <i>frequency</i> per year. If the figure has 'per year' attached, it's ARO or ALE.",
+    defs:{
+      "SLE":"single loss expectancy — the loss from one occurrence",
+      "ALE":"annualized loss expectancy — expected loss per year",
+      "ARO":"annualized rate of occurrence — how often per year it's expected",
+      "EF":"exposure factor — the proportion of asset value lost in one event"
+    }
+  },
+  "crypto-tool": {
+    domain:"1.0", name:"Key storage hardware",
+    prompt:"Which key-storage technology is this?",
+    rule:"Scale and location decide it: <b>one device's own</b> keys on its motherboard (TPM), <b>many systems' keys</b> in a dedicated appliance (HSM), <b>centralized cloud key lifecycle</b> (KMS), or an <b>isolated region of a processor</b> shielding data from the OS (secure enclave).",
+    defs:{
+      "TPM":"a chip on a single device's motherboard storing that device's keys",
+      "HSM":"a dedicated hardware appliance generating and storing keys at scale",
+      "KMS":"a centralized service managing key creation, rotation and access",
+      "Secure enclave":"an isolated processor region protecting data from the main OS"
+    }
+  },
+  "obfuscation": {
+    domain:"1.0", name:"Data obfuscation",
+    prompt:"Which obfuscation technique is this?",
+    rule:"Ask whether the original is <b>recoverable</b> and <b>where it lives</b>: replaced by an unrelated surrogate with the mapping vaulted (tokenization), partially hidden for display (masking), hidden inside another file (steganography), or irreversibly digested (hashing).",
+    defs:{
+      "Tokenization":"substitutes an unrelated surrogate value; the mapping is held in a vault",
+      "Data masking":"obscures part of the value for display while the original persists",
+      "Steganography":"conceals the data inside another file or medium",
+      "Hashing":"produces an irreversible fixed-length digest"
+    }
+  },
+
+  /* ===================== DOMAIN 2 ===================== */
+  "social-engineering": {
+    domain:"2.0", name:"Social engineering",
+    prompt:"Which social engineering technique is this?",
+    rule:"Sort by <b>channel</b> then <b>target</b>. Email = phishing; narrowed to named individuals = spear phishing; aimed at an executive = whaling. Voice = vishing, SMS = smishing. Inventing a false context to justify the request = pretexting. Compromising a site the victims already visit = watering hole.",
+    defs:{
+      "Phishing":"fraudulent email sent broadly, hoping someone bites",
+      "Spear phishing":"email tailored to specific, researched individuals",
+      "Whaling":"targets a senior executive specifically",
+      "Vishing":"conducted by voice call",
+      "Smishing":"conducted by SMS or text message",
+      "Pretexting":"invents a plausible scenario to justify the request",
+      "Watering hole":"compromises a third-party site the targets routinely visit",
+      "Business email compromise":"uses a genuine or spoofed internal executive account to authorize a transfer"
+    }
+  },
+  "malware": {
+    domain:"2.0", name:"Malware types",
+    prompt:"Which type of malware is this?",
+    rule:"Ask <b>how it spreads</b> and <b>what it does</b>. A worm self-propagates with no user action; a virus needs a host file and a user; a trojan needs the user to willingly run it believing it is legitimate. A rootkit hides presence; a logic bomb waits for a condition.",
+    defs:{
+      "Ransomware":"encrypts data and demands payment for the key",
+      "Trojan":"appears legitimate so the user runs it willingly",
+      "Worm":"self-replicates across a network with no user interaction",
+      "Virus":"attaches to a host file and needs a user to execute it",
+      "Rootkit":"hides its own presence, often at kernel level",
+      "Logic bomb":"lies dormant until a specific condition or date triggers it",
+      "Keylogger":"records keystrokes to capture credentials",
+      "Spyware":"covertly gathers information about the user's activity"
+    }
+  },
+  "password-attack": {
+    domain:"2.0", name:"Password attacks",
+    prompt:"Which password attack is this?",
+    rule:"Ask <b>what is being iterated</b>: every possible combination (brute force), a wordlist (dictionary), one common password against many accounts (spraying), or precomputed hashes (rainbow table). Spraying is the one that avoids lockout by going wide instead of deep.",
+    defs:{
+      "Brute force":"tries every possible character combination",
+      "Dictionary":"tries entries from a list of likely passwords",
+      "Password spraying":"tries one or two common passwords against many accounts to avoid lockout",
+      "Rainbow table":"looks up hashes in a precomputed table to reverse them",
+      "Pass-the-hash":"reuses a captured hash to authenticate without ever cracking it"
+    }
+  },
+  "app-attack": {
+    domain:"2.0", name:"Application attacks",
+    prompt:"Which application attack is this?",
+    rule:"Ask <b>where the malicious input ends up</b>: interpreted by the database (SQL injection), executed in another user's browser (XSS), riding an authenticated session to force an action (CSRF), overflowing allocated memory (buffer overflow), or exploiting the gap between check and use (race condition).",
+    defs:{
+      "SQL injection":"input is interpreted as database query syntax",
+      "Cross-site scripting":"injected script executes in another user's browser",
+      "Cross-site request forgery":"forces an authenticated user's browser to submit an unwanted action",
+      "Buffer overflow":"writes past the end of allocated memory to alter execution",
+      "Race condition":"exploits the timing gap between a check and its use (TOCTOU)",
+      "Directory traversal":"manipulates a path to reach files outside the intended folder",
+      "Privilege escalation":"gains rights beyond those originally granted",
+      "Replay":"captures and re-sends valid traffic to repeat an action"
+    }
+  },
+  "threat-actor": {
+    domain:"2.0", name:"Threat actors",
+    prompt:"Which threat actor is described?",
+    rule:"Sort by <b>motivation and resources</b>. Ideology points to hacktivist. Money points to organized crime. Geopolitics plus long dwell time and deep funding points to nation-state. Authorized access misused points to insider. Unsanctioned internal tooling is shadow IT — a risk, not an attacker.",
+    defs:{
+      "Nation-state":"state-sponsored, highly resourced, motivated by espionage or disruption",
+      "Unskilled attacker":"uses tools built by others without understanding them",
+      "Hacktivist":"motivated by a political or ideological cause",
+      "Insider threat":"authorized person misusing their legitimate access",
+      "Organized crime":"structured criminal group motivated by financial gain",
+      "Shadow IT":"employees deploying unsanctioned systems, creating unmanaged risk"
+    }
+  },
+  "network-attack": {
+    domain:"2.0", name:"Network &amp; wireless attacks",
+    prompt:"Which attack is this?",
+    rule:"Ask <b>what is being impersonated or corrupted</b>: a legitimate SSID (evil twin), an unauthorized AP added to the network (rogue AP), the position between two parties (on-path), name resolution (DNS poisoning), or the local MAC-to-IP mapping (ARP poisoning).",
+    defs:{
+      "Evil twin":"a fake access point mimicking a legitimate SSID to harvest traffic",
+      "Rogue access point":"an unauthorized AP attached to the network, often by an employee",
+      "On-path attack":"the attacker positions between two parties and relays their traffic",
+      "DNS poisoning":"corrupts name resolution so a hostname resolves to the attacker",
+      "ARP poisoning":"forges MAC-to-IP mappings to redirect traffic on the local segment",
+      "Deauthentication":"forces wireless clients to disconnect, often to capture the reconnection",
+      "Amplified DDoS":"abuses a service that replies with far more data than it receives"
+    }
+  },
+
+  /* ===================== DOMAIN 3 ===================== */
+  "cloud-model": {
+    domain:"3.0", name:"Cloud service models",
+    prompt:"Which service model is this?",
+    rule:"Ask <b>where the customer's responsibility starts</b>. IaaS: you manage the OS upward. PaaS: you manage only your application and data. SaaS: you manage only your data and users. Serverless: you supply functions and the provider handles all runtime.",
+    defs:{
+      "IaaS":"provider supplies compute, storage and network; customer manages the OS and everything above",
+      "PaaS":"provider supplies the runtime and OS; customer deploys only applications and data",
+      "SaaS":"provider supplies the finished application; customer manages only data and user access",
+      "Serverless":"customer supplies functions only; the provider handles all execution infrastructure",
+      "On-premises":"the organization owns and operates the entire stack"
+    }
+  },
+  "recovery-site": {
+    domain:"3.0", name:"Recovery sites",
+    prompt:"Which recovery site type is this?",
+    rule:"Trade <b>cost against recovery speed</b>. Hot: fully equipped, data current, minutes. Warm: hardware present, data stale, hours to days. Cold: space and power only, days to weeks. Geographic dispersion is about distance, not readiness.",
+    defs:{
+      "Hot site":"fully equipped and continuously updated — near-immediate takeover",
+      "Warm site":"hardware and connectivity present, but data must be restored first",
+      "Cold site":"empty space with power and connectivity; everything must be brought in",
+      "Geographic dispersion":"placing sites far enough apart that one disaster cannot affect both"
+    }
+  },
+  "data-state": {
+    domain:"3.0", name:"Data states",
+    prompt:"Which data state is described?",
+    rule:"Three states only. <b>At rest</b> = stored. <b>In transit</b> = moving across a network. <b>In use</b> = loaded in memory and being processed — the hardest to protect, and the reason for technologies like secure enclaves and homomorphic encryption.",
+    defs:{
+      "At rest":"stored on disk, tape or other media and not currently moving",
+      "In transit":"actively moving across a network between systems",
+      "In use":"loaded into memory and being actively processed by an application"
+    }
+  },
+  "net-appliance": {
+    domain:"3.0", name:"Network appliances",
+    prompt:"Which appliance or capability is this?",
+    rule:"Ask <b>which direction it faces and what it inspects</b>. Forward proxy serves internal users going out; reverse proxy fronts servers receiving traffic in. IDS observes and alerts; IPS sits inline and blocks. A WAF inspects HTTP specifically; an NGFW adds application awareness across protocols.",
+    defs:{
+      "Jump server":"a hardened host used as the single controlled entry point into a secure zone",
+      "Forward proxy":"sits between internal users and the internet, filtering outbound requests",
+      "Reverse proxy":"sits in front of servers, receiving inbound client requests on their behalf",
+      "Load balancer":"distributes incoming requests across a pool of servers",
+      "Web application firewall":"inspects HTTP/HTTPS traffic for application-layer attacks",
+      "Next-generation firewall":"adds application awareness and deep inspection to firewalling",
+      "IDS":"observes traffic and raises alerts without blocking",
+      "IPS":"sits inline and can drop matching traffic"
+    }
+  },
+  "segmentation": {
+    domain:"3.0", name:"Segmentation &amp; trust",
+    prompt:"Which design approach is described?",
+    rule:"Ask <b>how the separation is enforced</b>: no physical connection at all (air-gapped), a buffer zone for public-facing services (screened subnet), logical separation on shared hardware (VLAN), or per-request verification regardless of location (zero trust).",
+    defs:{
+      "Air-gapped":"physically isolated with no network connection to other systems",
+      "Screened subnet":"a buffer zone hosting public services between the internet and the internal network",
+      "VLAN":"logical separation of broadcast domains over shared physical infrastructure",
+      "Zero trust":"no implicit trust by location — every request is authenticated and authorized",
+      "SD-WAN":"software-defined routing of WAN traffic across multiple transport links"
+    }
+  },
+  "backup-type": {
+    domain:"3.0", name:"Backup types",
+    prompt:"Which backup approach is this?",
+    rule:"Ask <b>what gets copied and whether the marker resets</b>. Incremental copies changes since the <i>last backup of any kind</i> and clears the archive bit — fast to write, slow to restore. Differential copies changes since the <i>last full</i> and does not clear it — slower to write, faster to restore.",
+    defs:{
+      "Full":"copies everything every time",
+      "Incremental":"copies only what changed since the last backup of any type",
+      "Differential":"copies everything changed since the last full backup",
+      "Snapshot":"captures a point-in-time image of a volume or virtual machine",
+      "Replication":"continuously mirrors data to another system as it changes",
+      "Journaling":"records a log of every change so any point in time can be reconstructed"
+    }
+  },
+
+  /* ===================== DOMAIN 4 ===================== */
+  "auth-factor": {
+    domain:"4.0", name:"Authentication factors",
+    prompt:"Which authentication factor is this?",
+    rule:"Only four categories exist. Genuine multifactor requires factors from <b>different</b> categories — a password plus security questions is still one factor, because both are things you know.",
+    defs:{
+      "Something you know":"a secret held in memory — password, PIN, security question",
+      "Something you have":"a physical possession — token, smart card, phone",
+      "Something you are":"a biometric trait — fingerprint, face, iris, voice",
+      "Somewhere you are":"a location signal — GPS, IP geolocation, network segment"
+    }
+  },
+  "access-model": {
+    domain:"4.0", name:"Access control models",
+    prompt:"Which access control model is this?",
+    rule:"Ask <b>who decides</b>. The system enforces labels and no one can override (MAC). The data owner grants access at their discretion (DAC). Access follows job function (RBAC). Access follows evaluated attributes and conditions (ABAC). Access follows system-wide if/then rules (rule-based).",
+    defs:{
+      "MAC":"the system enforces classification labels; users cannot alter permissions",
+      "DAC":"the owner of the resource decides who may access it",
+      "RBAC":"permissions attach to job roles, and users inherit them by role",
+      "ABAC":"access is evaluated from attributes — department, device, time, sensitivity",
+      "Rule-based":"system-wide conditional rules applied uniformly regardless of identity"
+    }
+  },
+  "ir-phase": {
+    domain:"4.0", name:"Incident response phases",
+    prompt:"Which incident response phase is this?",
+    rule:"The order is preparation → detection → analysis → containment → eradication → recovery → lessons learned. <b>Containment</b> stops the spread, <b>eradication</b> removes the cause, <b>recovery</b> restores service. Isolating a host is containment; wiping the malware is eradication.",
+    defs:{
+      "Preparation":"building the plans, tooling and training before anything happens",
+      "Detection":"recognizing that an event may be an incident",
+      "Analysis":"determining scope, impact and what actually occurred",
+      "Containment":"limiting the spread and preventing further damage",
+      "Eradication":"removing the cause — malware, accounts, vulnerabilities",
+      "Recovery":"restoring systems to normal operation and confirming health",
+      "Lessons learned":"reviewing the response to improve future handling"
+    }
+  },
+  "federation": {
+    domain:"4.0", name:"Authentication protocols",
+    prompt:"Which protocol or service is this?",
+    rule:"Split <b>authorization</b> from <b>authentication</b> from <b>directory</b>. OAuth grants delegated authorization; OpenID Connect adds identity on top of it. SAML exchanges XML assertions for browser SSO. Kerberos uses tickets on a local network. RADIUS and TACACS+ are AAA services — TACACS+ separates the three A's and is Cisco-oriented.",
+    defs:{
+      "SAML":"XML-based assertions providing browser single sign-on between organizations",
+      "OAuth":"delegated authorization — grants an app limited access without sharing the password",
+      "OpenID Connect":"an identity layer built on top of OAuth 2.0",
+      "LDAP":"a protocol for querying and modifying a directory of users and resources",
+      "RADIUS":"an AAA protocol widely used for network and VPN access",
+      "Kerberos":"ticket-based authentication using a trusted key distribution centre",
+      "TACACS+":"an AAA protocol that separates authentication, authorization and accounting"
+    }
+  },
+  "email-auth": {
+    domain:"4.0", name:"Email authentication",
+    prompt:"Which email authentication mechanism is this?",
+    rule:"Three layers that build on one another. <b>SPF</b> lists which servers may send for the domain. <b>DKIM</b> signs the message so tampering is detectable. <b>DMARC</b> tells receivers what to do when SPF or DKIM fails, and where to send reports.",
+    defs:{
+      "SPF":"a DNS record listing the servers authorized to send mail for the domain",
+      "DKIM":"a cryptographic signature proving the message was not altered in transit",
+      "DMARC":"a policy telling receivers how to handle SPF/DKIM failures, plus reporting"
+    }
+  },
+  "finding-class": {
+    domain:"4.0", name:"Scan finding classification",
+    prompt:"How should this finding be classified?",
+    rule:"Two axes: what the tool <b>said</b>, and what is <b>true</b>. Positive means the tool alerted. True means the tool was right. A false negative is the dangerous one — a real vulnerability the scanner failed to report.",
+    defs:{
+      "True positive":"the tool alerted and the finding is genuine",
+      "False positive":"the tool alerted but the finding is not real",
+      "True negative":"the tool did not alert and there is nothing there",
+      "False negative":"the tool did not alert, but a real issue exists"
+    }
+  },
+  "vuln-ref": {
+    domain:"4.0", name:"Vulnerability references",
+    prompt:"Which reference or source is this?",
+    rule:"<b>CVE</b> identifies a specific vulnerability instance. <b>CVSS</b> scores its severity. <b>CWE</b> classifies the underlying weakness class. OSINT is publicly available intelligence; a bug bounty pays external researchers for findings.",
+    defs:{
+      "CVE":"a unique identifier assigned to one publicly disclosed vulnerability",
+      "CVSS":"a numeric severity score from 0.0 to 10.0 for a vulnerability",
+      "CWE":"a catalogue of underlying weakness types, such as improper input validation",
+      "OSINT":"intelligence gathered from publicly available sources",
+      "Bug bounty":"a programme paying external researchers for responsibly disclosed findings"
+    }
+  },
+  "sec-tooling": {
+    domain:"4.0", name:"Security tooling",
+    prompt:"Which security technology is this?",
+    rule:"Ask <b>what it watches</b>. SIEM aggregates and correlates logs estate-wide. EDR watches endpoints; XDR extends that correlation across endpoint, network and cloud. DLP watches data leaving. NAC controls what may join the network. FIM watches files for change. UBA watches people for anomalies.",
+    defs:{
+      "SIEM":"aggregates and correlates log data from across the estate for alerting",
+      "DLP":"detects and blocks sensitive data leaving the organization",
+      "EDR":"monitors endpoint behaviour to detect and respond to threats",
+      "XDR":"correlates detection and response across endpoints, network and cloud",
+      "NAC":"controls which devices may connect to the network and under what conditions",
+      "FIM":"alerts when monitored files or system binaries are modified",
+      "UBA":"baselines normal user behaviour and flags deviations from it"
+    }
+  },
+
+  /* ============ 1.2 Security concepts ============ */
+  "cia-triad": {
+    domain:"1.0", name:"CIA &amp; non-repudiation",
+    prompt:"Which security objective is primarily served?",
+    rule:"Ask <b>what would be lost</b> if the control failed. Secrecy → confidentiality. Accuracy and trustworthiness → integrity. Access when needed → availability. Inability to credibly deny an action → non-repudiation. Encryption serves confidentiality; hashing serves integrity; a digital signature serves both plus non-repudiation.",
+    defs:{
+      "Confidentiality":"keeping data secret from those not authorized to see it",
+      "Integrity":"ensuring data has not been altered, and that alteration is detectable",
+      "Availability":"ensuring authorized users can reach the data or service when needed",
+      "Non-repudiation":"ensuring an actor cannot credibly deny having taken an action",
+      "Authentication":"proving an identity claim is genuine"
+    }
+  },
+  "aaa": {
+    domain:"1.0", name:"AAA",
+    prompt:"Which part of AAA is this?",
+    rule:"Three sequential questions. <b>Authentication</b>: are you who you claim? <b>Authorization</b>: now that I know who you are, what may you do? <b>Accounting</b>: what did you actually do, recorded for later. Logging and billing are accounting, not authorization.",
+    defs:{
+      "Authentication":"verifying the identity claim",
+      "Authorization":"determining what an authenticated identity is permitted to do",
+      "Accounting":"recording what was done, for audit, billing or forensics"
+    }
+  },
+  "zero-trust": {
+    domain:"1.0", name:"Zero Trust components",
+    prompt:"Which Zero Trust component is described?",
+    rule:"The <b>control plane</b> decides; the <b>data plane</b> enforces and carries traffic. The policy engine makes the grant/deny decision, the policy administrator issues or revokes the session credential, and the policy enforcement point is where the decision is actually applied to traffic.",
+    defs:{
+      "Policy engine":"evaluates the request against policy and decides grant or deny",
+      "Policy administrator":"establishes or terminates the session based on the engine's decision",
+      "Policy enforcement point":"the gateway that actually permits or blocks the traffic",
+      "Implicit trust zone":"the area a subject reaches after passing the enforcement point",
+      "Adaptive identity":"identity evaluated with live context — device, location, behaviour"
+    }
+  },
+  "deception": {
+    domain:"1.0", name:"Deception technology",
+    prompt:"Which deception technique is this?",
+    rule:"Scale and granularity. One decoy <b>system</b> is a honeypot; a whole decoy <b>network</b> is a honeynet. A single bait <b>file</b> is a honeyfile; a bait <b>credential or record</b> whose use anywhere signals compromise is a honeytoken.",
+    defs:{
+      "Honeypot":"a single decoy system built to attract and observe attackers",
+      "Honeynet":"an entire decoy network of systems",
+      "Honeyfile":"a bait file that should never be opened legitimately",
+      "Honeytoken":"fake data or credentials whose use anywhere is a breach signal"
+    }
+  },
+
+  /* ============ 1.3 Change management ============ */
+  "change-mgmt": {
+    domain:"1.0", name:"Change management",
+    prompt:"Which element of change management is this?",
+    rule:"Sort by <b>when it happens and what question it answers</b>. Before: who signs off (approval), what could break (impact analysis), does it work (test results), how do we undo it (backout plan), when may we do it (maintenance window). After: what is the repeatable process (SOP) and what did we change (documentation).",
+    defs:{
+      "Approval process":"who must authorize the change before it proceeds",
+      "Impact analysis":"assessment of what the change could affect or break",
+      "Test results":"evidence from a non-production trial that the change works",
+      "Backout plan":"the documented route back if the change fails",
+      "Maintenance window":"the agreed period during which disruption is acceptable",
+      "Standard operating procedure":"the repeatable documented process for this class of change",
+      "Version control":"tracking successive revisions of configuration or documentation"
+    }
+  },
+
+  /* ============ 1.4 Cryptography depth ============ */
+  "crypto-primitive": {
+    domain:"1.0", name:"Cryptographic primitives",
+    prompt:"Which cryptographic primitive fits?",
+    rule:"Ask <b>how many keys and whether it reverses</b>. One shared key, fast, bulk data → symmetric. Key pair, slow, used for exchange and signing → asymmetric. No key and no reversal → hashing. Hash then encrypt with a private key → digital signature.",
+    defs:{
+      "Symmetric encryption":"one shared key encrypts and decrypts; fast, suited to bulk data",
+      "Asymmetric encryption":"a public/private key pair; slower, used for exchange and signatures",
+      "Hashing":"one-way digest; no key, no reversal, fixed length",
+      "Digital signature":"a hash encrypted with the signer's private key — integrity plus non-repudiation",
+      "Key exchange":"safely establishing a shared secret over an untrusted channel"
+    }
+  },
+  "hash-protect": {
+    domain:"1.0", name:"Hash hardening",
+    prompt:"Which technique is described?",
+    rule:"All three defend stored passwords differently. <b>Salting</b> adds a unique random value per password so identical passwords hash differently and rainbow tables fail. <b>Key stretching</b> makes each hash deliberately slow so brute force costs more. <b>HMAC</b> adds a secret key to prove authenticity, not to store passwords.",
+    defs:{
+      "Salting":"adds a unique random value per password, defeating precomputed tables",
+      "Key stretching":"deliberately slows hashing to make brute force expensive",
+      "HMAC":"combines a hash with a secret key to prove integrity and authenticity",
+      "Hashing":"the base one-way digest, with none of the above added"
+    }
+  },
+  "encryption-level": {
+    domain:"1.0", name:"Encryption scope",
+    prompt:"At which level is the encryption applied?",
+    rule:"Ask <b>how much is covered by one key decision</b> — the whole drive, one partition, a mounted volume, individual files, a whole database, or single fields within it. Narrower scope means finer control and more overhead.",
+    defs:{
+      "Full-disk":"the entire drive including the OS, unlocked at boot",
+      "Partition":"one partition of a drive, leaving others untouched",
+      "Volume":"a defined logical volume or container",
+      "File":"individual files, each independently protected",
+      "Database":"the whole database as a unit",
+      "Record":"individual rows or fields within a database"
+    }
+  },
+  "cert-concept": {
+    domain:"1.0", name:"Certificate concepts",
+    prompt:"Which certificate concept is this?",
+    rule:"Ask <b>where in the lifecycle</b> it sits. Requesting → CSR. Trust anchor → root of trust. Coverage of many subdomains → wildcard. Issued by yourself, so untrusted externally → self-signed. Cancelling before expiry → CRL (a published list) or OCSP (a live query).",
+    defs:{
+      "CSR":"the signing request containing the public key and identity, sent to a CA",
+      "CRL":"a published list of certificates revoked before their expiry",
+      "OCSP":"a live query answering whether one certificate is currently revoked",
+      "Wildcard certificate":"covers a domain and all its first-level subdomains",
+      "Self-signed certificate":"signed by its own key; trusted only where manually installed",
+      "Root of trust":"the trusted anchor certificate the whole chain validates back to"
+    }
+  },
+
+  /* ============ 5.3 Vendor assessment ============ */
+  "vendor-assessment": {
+    domain:"5.0", name:"Vendor assessment",
+    prompt:"Which third-party assessment mechanism is this?",
+    rule:"Ask <b>who performs it and what it produces</b>. A contractual power to inspect → right-to-audit clause. Self-reported answers → questionnaire. Someone independent examining and reporting → independent assessment. Tracing components and their origins → supply chain analysis. The written scope and limits of a test → rules of engagement.",
+    defs:{
+      "Right-to-audit clause":"a contractual term letting the customer inspect the vendor's controls",
+      "Vendor questionnaire":"a self-reported set of answers about the vendor's security posture",
+      "Independent assessment":"an outside party evaluates the vendor and reports",
+      "Supply chain analysis":"examining the origin and integrity of components and sub-suppliers",
+      "Penetration testing":"authorized simulated attack against the vendor's systems",
+      "Rules of engagement":"the agreed scope, timing and limits before testing begins",
+      "Due diligence":"investigation of a vendor's viability and practices before contracting"
+    }
+  },
+
+  /* ============ 5.4 Compliance ============ */
+  "compliance-consequence": {
+    domain:"5.0", name:"Non-compliance consequences",
+    prompt:"Which consequence of non-compliance is this?",
+    rule:"Sort by <b>who imposes it</b>. A regulator imposing money → fines. A regulator imposing restrictions or penalties → sanctions. A regulator withdrawing permission to operate → loss of license. The other party to a contract → contractual impacts. The market and public → reputational damage.",
+    defs:{
+      "Fines":"monetary penalties imposed by a regulator or court",
+      "Sanctions":"restrictions or punitive measures imposed by an authority",
+      "Reputational damage":"loss of customer and market confidence",
+      "Loss of license":"withdrawal of the authorization required to operate",
+      "Contractual impacts":"penalties, termination or liability arising under an agreement"
+    }
+  },
+  "compliance-monitoring": {
+    domain:"5.0", name:"Due diligence, due care &amp; attestation",
+    prompt:"Which compliance activity is this?",
+    rule:"<b>Due diligence</b> is investigating <i>before</i> — the research. <b>Due care</b> is acting reasonably <i>on an ongoing basis</i> — the doing. <b>Attestation</b> is formally asserting compliance. <b>Acknowledgement</b> is a user confirming they have read and accepted something.",
+    defs:{
+      "Due diligence":"investigation and research undertaken before a decision or engagement",
+      "Due care":"ongoing reasonable action to protect the organization and its data",
+      "Attestation":"a formal signed assertion that controls are in place",
+      "Acknowledgement":"a user's confirmation that they have read and accepted a policy",
+      "Internal monitoring":"the organization checking its own ongoing compliance",
+      "External monitoring":"an outside party checking the organization's compliance"
+    }
+  },
+  "privacy-concept": {
+    domain:"5.0", name:"Privacy concepts",
+    prompt:"Which privacy concept is this?",
+    rule:"Ask <b>what obligation is in play</b>: erasing on request (right to be forgotten), how long data may be kept (retention), knowing what you hold and where (inventory), which country's law governs it (sovereignty), or the individual the data describes (data subject).",
+    defs:{
+      "Right to be forgotten":"the individual's right to have their personal data erased on request",
+      "Data retention":"how long data may or must be kept before disposal",
+      "Data inventory":"the catalogue of what data is held, where, and of what type",
+      "Data sovereignty":"the principle that data is governed by the laws of the country it resides in",
+      "Data subject":"the individual whom the personal data describes"
+    }
+  },
+
+  /* ============ 5.6 Security awareness ============ */
+  "anomalous-behavior": {
+    domain:"5.0", name:"Anomalous behaviour",
+    prompt:"How should this user behaviour be classified?",
+    rule:"Ask about <b>intent and awareness</b>. Knowingly taking a shortcut that raises risk → risky. Genuinely out of character for that user, cause unknown → unexpected. A mistake with no intent to bypass anything → unintentional.",
+    defs:{
+      "Risky":"knowing conduct that deliberately accepts or creates security risk",
+      "Unexpected":"conduct that deviates from the user's established baseline",
+      "Unintentional":"an honest mistake with no intent to circumvent controls"
+    }
+  },
+  "awareness-topic": {
+    domain:"5.0", name:"Awareness training topics",
+    prompt:"Which awareness topic does this address?",
+    rule:"Match the training to <b>the threat it defends against</b>. Guarding what you say and where → operational security. Spotting a colleague turning malicious → insider threat. Home and coffee-shop working → hybrid/remote guidance. Found USB sticks and unknown cables → removable media.",
+    defs:{
+      "Phishing recognition":"identifying and reporting fraudulent messages",
+      "Insider threat":"recognizing and reporting concerning behaviour by colleagues",
+      "Password management":"creating, storing and rotating credentials safely",
+      "Removable media and cables":"risks of unknown USB devices, drives and charging cables",
+      "Social engineering":"resisting manipulation and pretexting in person or by phone",
+      "Operational security":"limiting what is disclosed about systems, work and travel",
+      "Hybrid and remote work":"securing home networks, screens and devices away from the office"
+    }
+  },
+
+  /* ============ 4.2 Asset disposal ============ */
+  "asset-disposal": {
+    domain:"4.0", name:"Asset disposal",
+    prompt:"Which disposal or sanitization method is this?",
+    rule:"Ask whether the <b>media survives</b>. Overwriting or degaussing leaves reusable media → sanitization. Shredding, pulverizing or incinerating does not → destruction. A signed record proving it happened → certification. The rule setting how long to keep it first → data retention.",
+    defs:{
+      "Sanitization":"removes data while leaving the media usable — wiping, degaussing, crypto-erase",
+      "Destruction":"physically destroys the media so it cannot be reused",
+      "Certification":"documented proof, usually from a vendor, that disposal occurred",
+      "Data retention":"the policy determining how long data is kept before disposal"
+    }
+  }
+};
+
+/* ============================================================
+   SCENARIOS
+   ============================================================ */
+const ITEMS = [
+  /* ---- control type ---- */
+  {b:"control-type",a:"Preventive",s:"Bollards are installed along the front of the building lobby so that a vehicle cannot be driven through the glass entrance.",w:"The bollard physically stops the event from happening at all — nothing is being noticed, discouraged, or repaired."},
+  {b:"control-type",a:"Deterrent",s:"A banner appears before login stating that all activity is monitored and that unauthorized access will be prosecuted.",w:"It changes nothing technically — someone determined can still proceed. Its whole function is to make them decide not to."},
+  {b:"control-type",a:"Detective",s:"Each morning an analyst reviews the previous night's firewall logs to identify connection attempts that were blocked.",w:"The event has already occurred; the review exists to notice it. Reviewing logs never prevents anything."},
+  {b:"control-type",a:"Corrective",s:"Following a ransomware incident, the team restores the affected file shares from the previous night's backup.",w:"The damage has already happened and this repairs it. Corrective controls always act after the fact."},
+  {b:"control-type",a:"Compensating",s:"A legacy manufacturing controller cannot support multifactor authentication. Until it is replaced, it is placed on an isolated VLAN reachable only from two hardened jump hosts.",w:"The required control (MFA) is genuinely not possible here, so a substitute stands in for it. That substitution is what makes it compensating rather than merely preventive."},
+  {b:"control-type",a:"Directive",s:"The acceptable use policy states that employees must not connect personal USB storage devices to company workstations.",w:"Nothing enforces it technically — it instructs people what to do. That instruction is the control."},
+  {b:"control-type",a:"Deterrent",s:"Motion-activated floodlights are installed around the perimeter fence so that anyone approaching after dark is brightly illuminated.",w:"Light stops no one. It works by making the attempt feel too exposed to be worth it."},
+  {b:"control-type",a:"Detective",s:"An intrusion detection system raises an alert when traffic matching a known exploit signature crosses the network.",w:"Detection, by definition — an IDS observes and reports. An IPS that dropped the traffic would be preventive."},
+  {b:"control-type",a:"Preventive",s:"The server room door requires a badge swipe, and the lock does not release without a valid credential.",w:"Access is blocked outright for anyone without a badge."},
+  {b:"control-type",a:"Corrective",s:"After a vulnerability is confirmed in production, the team applies the vendor's patch to close it.",w:"The weakness already exists and is being remediated. Patching after discovery is corrective; patching on a schedule before exposure would be preventive."},
+  {b:"control-type",a:"Directive",s:"The incident response playbook requires analysts to escalate any confirmed data exfiltration to the CISO within thirty minutes.",w:"It directs how people must act. A playbook mandating behaviour is directive, even though the response it triggers may be corrective."},
+  {b:"control-type",a:"Compensating",s:"A payment application cannot be segmented off the corporate network before the audit deadline, so the company implements enhanced logging and daily manual review of all transactions to that host.",w:"The intended control could not be implemented in time, so an alternative provides comparable coverage in its place."},
+
+  /* ---- control category ---- */
+  {b:"control-category",a:"Technical",s:"A firewall rule blocks all inbound traffic to TCP port 3389 originating from the internet.",w:"A system enforces it, with no human in the loop. Technology implementing the control makes it technical."},
+  {b:"control-category",a:"Managerial",s:"The security team performs an annual risk assessment and presents the documented findings to executive leadership.",w:"This is an oversight and planning instrument — it manages the security programme rather than defending a system directly."},
+  {b:"control-category",a:"Operational",s:"Security officers walk the data centre floor on a documented patrol route every two hours.",w:"People performing a routine task is the definition of operational. The guards are not a barrier; their patrolling is the control."},
+  {b:"control-category",a:"Physical",s:"A three-metre chain-link fence topped with barbed wire encloses the electrical substation.",w:"A tangible object in the real world forming a barrier."},
+  {b:"control-category",a:"Operational",s:"All staff complete security awareness training delivered by the security team each quarter.",w:"Humans carrying out a recurring activity. The policy requiring training would be managerial — running it is operational."},
+  {b:"control-category",a:"Managerial",s:"The organization publishes and maintains an information security policy defining acceptable use of company systems.",w:"A governance document is a management instrument. Note this is managerial by category and directive by type — the two axes are independent."},
+  {b:"control-category",a:"Technical",s:"Full-disk encryption is enforced on every corporate laptop through a group policy object.",w:"Configuration on a system enforces it automatically."},
+  {b:"control-category",a:"Physical",s:"An access control vestibule with interlocking doors prevents a second person from following an authorized employee into the secure area.",w:"A physical construction in the building. Tailgating is defeated by the architecture, not by software."},
+  {b:"control-category",a:"Operational",s:"Before granting a new hire system access, a manager verifies their identity documents in person and signs the access request.",w:"A person performing a verification step as part of a routine process."},
+
+  /* ---- risk strategy ---- */
+  {b:"risk-strategy",a:"Transfer",s:"The company purchases a cyber-insurance policy that covers breach notification, forensics and legal costs up to $5 million.",w:"The likelihood of a breach is unchanged — only who absorbs the financial consequence. That shift is transference."},
+  {b:"risk-strategy",a:"Accept",s:"Leadership reviews a low-severity finding in an internal-only tool, concludes the residual risk sits within tolerance, and records a formal exception in the risk register.",w:"The risk is knowingly retained and nothing is done about it. Documenting the decision is what makes it acceptance rather than negligence."},
+  {b:"risk-strategy",a:"Avoid",s:"After legal review, the company cancels its planned launch in a region whose data-residency requirements it cannot meet.",w:"The activity that created the risk is not undertaken, so the risk ceases to exist. Nothing was reduced — it was removed."},
+  {b:"risk-strategy",a:"Mitigate",s:"Endpoint detection and response agents are deployed across all workstations to reduce the chance that malware spreads laterally.",w:"A control is applied that lowers likelihood and impact while the activity continues."},
+  {b:"risk-strategy",a:"Transfer",s:"Rather than store cardholder data itself, the retailer routes all payments through a PCI-DSS-compliant third-party processor.",w:"The obligation and the exposure now sit with the processor. Outsourcing the risky function to a third party is transference."},
+  {b:"risk-strategy",a:"Avoid",s:"Instead of hardening its public anonymous FTP service, the organization decommissions the service entirely.",w:"The service is gone, so its risk is gone. Contrast this with hardening it, which would be mitigation."},
+  {b:"risk-strategy",a:"Mitigate",s:"The network is divided into segments so that a compromised workstation cannot reach the finance servers directly.",w:"Impact is reduced but the risk still exists — the hallmark of mitigation."},
+  {b:"risk-strategy",a:"Accept",s:"A vulnerability scanner flags an outdated library in a lab system with no network access. The risk owner signs off that no remediation is warranted.",w:"A deliberate, documented decision to live with it."},
+
+  /* ---- agreements ---- */
+  {b:"agreement",a:"SLA",s:"The contract specifies 99.95% monthly availability and defines the service credits owed to the customer if the provider falls below it.",w:"Measurable performance plus a remedy for missing it — that combination is only ever an SLA."},
+  {b:"agreement",a:"MOU",s:"Two government agencies sign a document expressing their shared intention to collaborate on threat intelligence sharing. It explicitly creates no legal obligations.",w:"Intent without binding force. The moment it binds and assigns responsibilities, it becomes an MOA."},
+  {b:"agreement",a:"MSA",s:"Before any projects begin, a consultancy and its client sign the overarching contract covering payment terms, liability limits and intellectual property for all future engagements.",w:"The umbrella that individual projects will hang from. Its purpose is to avoid renegotiating terms each time."},
+  {b:"agreement",a:"SOW",s:"Under an existing master contract, a document lists the specific deliverables, acceptance criteria and milestone dates for the third-quarter migration.",w:"Specific deliverables for one engagement, under terms already agreed elsewhere."},
+  {b:"agreement",a:"NDA",s:"Before the prospective vendor is shown any network architecture diagrams, both parties sign a document prohibiting disclosure of the information exchanged.",w:"Its entire subject is confidentiality of shared information."},
+  {b:"agreement",a:"BPA",s:"Two firms forming a joint venture document how profits, decision-making authority and operational responsibilities will be divided between them.",w:"Terms governing a partnership between businesses — ownership and profit sharing point here, not to a service contract."},
+  {b:"agreement",a:"MOA",s:"Two organizations sign a formal, binding document setting out each party's specific obligations and responsibilities for a shared research project.",w:"Binding, with defined responsibilities. That's the line separating an MOA from an MOU."},
+  {b:"agreement",a:"SLA",s:"The managed service provider commits to a four-hour response time for severity-one tickets and a two-business-day resolution target.",w:"Response and resolution commitments are service-level terms."},
+
+  /* ---- data roles ---- */
+  {b:"data-role",a:"Data owner",s:"The Vice President of Finance is accountable for the company's financial records and determines that they are classified as Confidential.",w:"Senior accountability plus the authority to classify. Deciding the classification is the owner's job."},
+  {b:"data-role",a:"Data controller",s:"A marketing company decides which categories of customer information to collect and the purposes for which it will be used.",w:"Deciding the purpose and the means of processing is the controller's defining act."},
+  {b:"data-role",a:"Data processor",s:"A cloud email provider stores and transmits its customer's messages strictly according to that customer's documented instructions.",w:"It acts only on instruction and sets no purposes of its own."},
+  {b:"data-role",a:"Data custodian / steward",s:"A database administrator configures encryption at rest, schedules the nightly backups and applies the access permissions that the business owner specified.",w:"Hands-on technical protection, implementing decisions someone else made."},
+  {b:"data-role",a:"Data processor",s:"An employer contracts an external payroll bureau to run monthly payroll using employee data the employer supplies and directs. Identify the bureau's role.",w:"The employer decided the purpose; the bureau merely executes it."},
+  {b:"data-role",a:"Data owner",s:"The head of Human Resources decides which job roles are permitted to access the employee records file share.",w:"Authority over who may access the data belongs to the owner. The administrator who applies those permissions is the custodian."},
+  {b:"data-role",a:"Data custodian / steward",s:"A systems administrator verifies each morning that the previous night's backup of the HR file share completed successfully.",w:"Routine technical care of the data — no decision-making authority over it."},
+  {b:"data-role",a:"Data controller",s:"Under GDPR, identify the party that determines the purposes and means of processing personal data.",w:"This is the regulation's own definition of a controller."},
+
+  /* ---- BIA metrics ---- */
+  {b:"bia-metric",a:"RTO",s:"After a business impact analysis, the company states that the order-entry system must be restored to service within four hours of an outage.",w:"A forward-looking restoration target the business has set."},
+  {b:"bia-metric",a:"RPO",s:"The business determines it can tolerate losing at most fifteen minutes of transactions, and the backup schedule is set accordingly.",w:"Tolerable data loss expressed as a span of time — always RPO. Notice it drives backup frequency, not restoration speed."},
+  {b:"bia-metric",a:"MTTR",s:"Historical ticket data shows the team takes an average of ninety minutes to replace a failed drive and bring the array back online.",w:"An observed average repair time, not a target anyone set."},
+  {b:"bia-metric",a:"MTBF",s:"The hardware vendor states that the appliance averages 40,000 hours of operation between failures.",w:"Time between failures — a reliability measurement used for replacement planning."},
+  {b:"bia-metric",a:"RPO",s:"Transaction log backups are taken every five minutes so that no more than five minutes of data could ever be lost.",w:"The quantity of acceptable data loss is the thing being defined."},
+  {b:"bia-metric",a:"RTO",s:"The disaster recovery plan targets bringing the customer portal back online within two hours of a declared disaster.",w:"How quickly service returns."},
+  {b:"bia-metric",a:"MTBF",s:"A metric used to forecast how many spare power supplies to keep in inventory and when to schedule preventive replacement.",w:"Failure frequency drives spares planning."},
+  {b:"bia-metric",a:"MTTR",s:"A metric expressing, on average, how long it takes to restore a component to working order once it has failed.",w:"The repair duration itself."},
+
+  /* ---- governance docs ---- */
+  {b:"governance-doc",a:"Policy",s:"A board-approved document states that the organization will protect the confidentiality of customer information and that every employee shares responsibility for doing so.",w:"High-level intent and responsibility, with no specific technical requirement — the signature of a policy."},
+  {b:"governance-doc",a:"Standard",s:"A mandatory requirement states that all data at rest must be encrypted using AES-256.",w:"A specific, measurable, mandatory requirement. The named algorithm is the giveaway."},
+  {b:"governance-doc",a:"Procedure",s:"A numbered document walks the service desk through each step required to revoke an departing employee's access, in order.",w:"Ordered steps for performing a task."},
+  {b:"governance-doc",a:"Guideline",s:"The security team publishes recommended practices for constructing memorable passphrases, noting that teams may adapt them to their own needs.",w:"Advisory rather than mandatory. 'May adapt' means it cannot be a standard."},
+  {b:"governance-doc",a:"Standard",s:"A document specifies that all user account passwords must be a minimum of fourteen characters.",w:"A precise mandatory threshold."},
+  {b:"governance-doc",a:"Policy",s:"Every employee signs a document at onboarding setting out what constitutes acceptable use of company systems.",w:"Broad mandatory expectations of conduct."},
+  {b:"governance-doc",a:"Procedure",s:"An incident response playbook lists the exact sequence of actions an analyst takes when a phishing email is reported.",w:"A step-by-step sequence for executing a task."},
+  {b:"governance-doc",a:"Guideline",s:"An internal wiki page offers suggested conventions for naming and tagging cloud resources, presented as advice rather than a requirement.",w:"Optional and unenforced."},
+
+  /* ---- assessments ---- */
+  {b:"assessment",a:"Internal audit",s:"The organization's own audit committee reviews the effectiveness of its access controls and reports the findings to the board.",w:"Performed by the organization's own people, reporting internally."},
+  {b:"assessment",a:"External audit",s:"An independent accounting firm examines the company's controls over a six-month window and issues a SOC 2 Type II report.",w:"An independent outside party performing the examination."},
+  {b:"assessment",a:"Attestation",s:"A company officer signs a formal statement affirming that the described security controls are implemented and operating as documented.",w:"A signed assertion of compliance. It claims a state of affairs; it does not test one."},
+  {b:"assessment",a:"Penetration test",s:"A contracted team actively attempts to exploit the public web application in order to demonstrate what an attacker could reach.",w:"Active exploitation to prove real-world impact — beyond merely identifying weaknesses."},
+  {b:"assessment",a:"External audit",s:"A financial regulator conducts a scheduled examination of the firm's compliance with sector-specific security rules.",w:"A regulator is an external party. Examination by a regulator sits under external audit."},
+  {b:"assessment",a:"Internal audit",s:"Department managers complete a self-assessment questionnaire measuring their area against the internal control checklist.",w:"Self-assessment performed in-house."},
+  {b:"assessment",a:"Penetration test",s:"An authorized third-party team is given no prior information about the environment and attempts to gain a foothold from the internet.",w:"An authorized simulated attack — here in an unknown-environment configuration."},
+  {b:"assessment",a:"Attestation",s:"A vendor submits a signed statement to its customer affirming that it meets the security requirements set out in their contract.",w:"A formal claim of compliance provided to another party."},
+
+  /* ---- quantitative risk ---- */
+  {b:"risk-quant",a:"SLE",s:"A server valued at $40,000 would lose half its value in a flood. Identify what the resulting $20,000 figure represents.",w:"AV × EF = $40,000 × 0.5. The loss from one occurrence is the single loss expectancy."},
+  {b:"risk-quant",a:"ARO",s:"Historical records indicate the facility floods roughly once every four years. Identify what the resulting figure of 0.25 represents.",w:"A frequency per year — 1 ÷ 4. Frequency is always ARO."},
+  {b:"risk-quant",a:"ALE",s:"An analyst multiplies a $20,000 single-event loss by an expected frequency of 0.25 per year to obtain $5,000. Identify the $5,000 figure.",w:"SLE × ARO = ALE, the expected annual cost used to justify a control's budget."},
+  {b:"risk-quant",a:"EF",s:"An assessment concludes that a fire would destroy 60% of a warehouse's value. Identify what the 60% represents.",w:"The proportion of asset value lost in one event — a percentage, never a currency amount."},
+  {b:"risk-quant",a:"ALE",s:"A manager compares the annual cost of a proposed control against the expected yearly loss from the risk it addresses.",w:"Control spend is justified against the annualized figure."},
+  {b:"risk-quant",a:"SLE",s:"Identify the value representing the financial loss expected from a single occurrence of a threat event.",w:"One occurrence — the definition of SLE."},
+  {b:"risk-quant",a:"ARO",s:"Identify the value representing how many times per year a given threat event is expected to occur.",w:"Occurrences per year."},
+  {b:"risk-quant",a:"EF",s:"Identify the value that, multiplied by asset value, produces the single loss expectancy.",w:"AV × EF = SLE, so the multiplier here is the exposure factor."},
+
+  /* ---- key storage ---- */
+  {b:"crypto-tool",a:"TPM",s:"A dedicated chip soldered to a laptop's motherboard stores the keys used for that machine's full-disk encryption and verifies boot integrity.",w:"Bound to one device and living on its board."},
+  {b:"crypto-tool",a:"HSM",s:"A tamper-resistant rack appliance generates and stores the private keys for the organization's certificate authority, serving many systems.",w:"A dedicated appliance operating at scale across systems."},
+  {b:"crypto-tool",a:"KMS",s:"A cloud service centrally creates encryption keys, rotates them on a schedule and controls which workloads may use them.",w:"Lifecycle management and access control across an estate, delivered as a service."},
+  {b:"crypto-tool",a:"Secure enclave",s:"An isolated region of a phone's processor holds biometric templates so that the main operating system can never read them directly.",w:"Isolation within a processor, shielding data from the OS."},
+  {b:"crypto-tool",a:"TPM",s:"Identify the component that allows a workstation to attest that its boot process has not been altered.",w:"Boot attestation is a TPM function, tied to the individual machine."},
+  {b:"crypto-tool",a:"HSM",s:"A payment processor requires FIPS-validated hardware to perform cryptographic operations for high transaction volumes without exposing keys to the host.",w:"High-volume dedicated cryptographic hardware."},
+
+  /* ---- obfuscation ---- */
+  {b:"obfuscation",a:"Tokenization",s:"Card numbers in the application database are replaced with surrogate values bearing no mathematical relationship to the originals, and the mapping is held in a separate secure vault.",w:"An unrelated substitute plus a vaulted mapping. The original is recoverable, but only through the vault."},
+  {b:"obfuscation",a:"Data masking",s:"A support agent's screen displays a customer's national ID as XXX-XX-4471 while the complete value remains stored in the database.",w:"Part of the value is hidden for display only; the original is untouched underneath."},
+  {b:"obfuscation",a:"Steganography",s:"A message is concealed within the least significant bits of an image file so that the file appears entirely ordinary.",w:"Data hidden inside another medium — concealing the existence of the message, not just its content."},
+  {b:"obfuscation",a:"Hashing",s:"User passwords are stored as irreversible fixed-length digests, each combined with a unique random value before the digest is computed.",w:"Irreversible and fixed-length, with a salt. Nothing here can be converted back."},
+  {b:"obfuscation",a:"Tokenization",s:"A retailer wishes to reduce PCI-DSS scope by ensuring no real card numbers are held in its own systems, while still being able to process refunds.",w:"Surrogates in the environment with the real values held elsewhere — the standard scope-reduction technique."},
+  {b:"obfuscation",a:"Data masking",s:"A test database is populated from production with names and addresses obscured so developers cannot see real customer identities.",w:"Values obscured for a lower-trust audience while the structure is preserved."},
+
+  /* ================= DOMAIN 2 ================= */
+  /* ---- social engineering ---- */
+  {b:"social-engineering",a:"Phishing",s:"Forty thousand identical emails claiming a package could not be delivered are sent to addresses harvested from a data breach, each linking to a credential-harvesting page.",w:"Untargeted and sent at volume — no individual was researched."},
+  {b:"social-engineering",a:"Spear phishing",s:"Three members of the accounts payable team receive an email referencing a real supplier by name and a genuine open invoice number, asking them to confirm updated bank details.",w:"Specific individuals plus researched detail. The tailoring is what separates spear phishing from ordinary phishing."},
+  {b:"social-engineering",a:"Whaling",s:"The Chief Financial Officer receives a message crafted to look like it comes from outside counsel regarding a confidential acquisition, urging immediate review of an attached document.",w:"Aimed at a senior executive specifically — spear phishing narrowed to a high-value target."},
+  {b:"social-engineering",a:"Vishing",s:"An employee receives a phone call from someone claiming to be from the bank's fraud department, asking them to read back a code just sent to their phone.",w:"Voice is the channel."},
+  {b:"social-engineering",a:"Smishing",s:"A text message purporting to be from a delivery company asks the recipient to click a link to reschedule a parcel and pay a small redelivery fee.",w:"SMS is the channel."},
+  {b:"social-engineering",a:"Pretexting",s:"A caller states that they are the new regional auditor, that they are on site tomorrow, and that they need the building access codes in advance to prepare their report.",w:"An invented but plausible backstory manufactures the authority for the request."},
+  {b:"social-engineering",a:"Watering hole",s:"Attackers compromise a niche industry forum that engineers at the target company read daily, planting a browser exploit that fires only for visitors from that company's IP range.",w:"The victims were never contacted — a site they already trusted was poisoned and they came to it."},
+  {b:"social-engineering",a:"Business email compromise",s:"After compromising the CEO's genuine mailbox, an attacker emails the finance director from that real account instructing an urgent wire transfer to close a deal.",w:"A legitimate internal executive account is used to authorize a fraudulent payment — no spoofing required."},
+
+  /* ---- malware ---- */
+  {b:"malware",a:"Worm",s:"Within forty minutes, a piece of code has spread to two thousand hosts across the network by exploiting an unpatched SMB service. No user opened anything.",w:"Self-propagating with zero user interaction — the defining property."},
+  {b:"malware",a:"Trojan",s:"Staff download what appears to be a free PDF conversion utility from a search advert. It converts files as promised, and also opens a persistent connection to an external server.",w:"The user installed it willingly because it appeared legitimate — and it does perform its advertised function."},
+  {b:"malware",a:"Virus",s:"A macro embedded in a spreadsheet runs when the file is opened and appends itself to every other spreadsheet in the user's documents folder.",w:"It needs a host file and a user action to execute. Contrast with a worm, which needs neither."},
+  {b:"malware",a:"Ransomware",s:"Files across the shared drive are rewritten with a new extension, and a text file in each folder demands payment in cryptocurrency for the decryption key.",w:"Encryption plus extortion."},
+  {b:"malware",a:"Rootkit",s:"An investigation finds a malicious process that does not appear in the task list, is absent from directory listings, and survives reinstallation of the affected application.",w:"Concealment of its own presence, typically by subverting the OS at kernel level."},
+  {b:"malware",a:"Logic bomb",s:"Code left behind by a departing administrator checks each night whether their account still exists in the directory, and would delete the database if it does not.",w:"Dormant until a trigger condition is met."},
+  {b:"malware",a:"Keylogger",s:"A small driver captures every keystroke on the workstation and writes them to a hidden file that is uploaded weekly.",w:"Keystroke capture specifically."},
+  {b:"malware",a:"Spyware",s:"Software installed alongside a free toolbar monitors browsing history, form entries and search terms, transmitting them to an advertising network.",w:"Covert collection of activity data."},
+
+  /* ---- password attacks ---- */
+  {b:"password-attack",a:"Password spraying",s:"Authentication logs show a single login attempt against each of nine hundred user accounts within ten minutes, all using the password Autumn2026!",w:"One password, many accounts. Going wide rather than deep is precisely how lockout thresholds are evaded."},
+  {b:"password-attack",a:"Brute force",s:"An offline cracking rig systematically tries every combination of characters up to twelve positions against a captured hash.",w:"Exhaustive enumeration of the keyspace."},
+  {b:"password-attack",a:"Dictionary",s:"An attacker runs a list of ten million previously breached passwords against a captured hash file.",w:"A wordlist of likely candidates rather than every possible combination."},
+  {b:"password-attack",a:"Rainbow table",s:"An attacker uses a large precomputed lookup of hash-to-plaintext pairs to reverse unsalted password hashes almost instantly.",w:"Precomputation is the giveaway — and salting is the specific defence against it."},
+  {b:"password-attack",a:"Pass-the-hash",s:"Having extracted an NTLM hash from memory, an attacker authenticates to another server using the hash directly, never learning the password itself.",w:"The hash is used as the credential; no cracking occurs."},
+  {b:"password-attack",a:"Brute force",s:"A web application's login page receives 4.2 million requests against a single administrator account over six hours, cycling through every character combination.",w:"Exhaustive enumeration, here performed online against one account."},
+
+  /* ---- application attacks ---- */
+  {b:"app-attack",a:"SQL injection",s:"Entering ' OR '1'='1 into a login form returns the first user record in the database and grants access.",w:"Input escapes its context and is interpreted as query syntax."},
+  {b:"app-attack",a:"Cross-site scripting",s:"A comment posted to a forum contains a script tag. Every subsequent visitor to that page has their session cookie sent to an external server.",w:"The payload executes in other users' browsers — victims are the site's visitors, not the server."},
+  {b:"app-attack",a:"Cross-site request forgery",s:"A logged-in banking user visits a malicious page containing a hidden form that automatically submits a transfer request to the bank using the user's active session.",w:"The victim's own authenticated session is used to perform an action they never intended."},
+  {b:"app-attack",a:"Buffer overflow",s:"Submitting 5,000 characters into a field that allocates 256 bytes causes the application to crash and, with a crafted payload, to execute attacker-supplied instructions.",w:"Writing past allocated memory to overwrite adjacent structures and alter execution flow."},
+  {b:"app-attack",a:"Race condition",s:"A gift card redemption endpoint is called twenty times simultaneously. Each request validates the balance before any has decremented it, and all twenty succeed.",w:"The gap between the check and the use is exploited — a time-of-check to time-of-use flaw."},
+  {b:"app-attack",a:"Directory traversal",s:"Requesting a document with the path ../../../../etc/passwd returns a system file from outside the web root.",w:"Path manipulation escapes the intended directory."},
+  {b:"app-attack",a:"Privilege escalation",s:"A standard user exploits an unquoted service path to have their own executable run under the SYSTEM account.",w:"Rights obtained beyond those originally assigned."},
+  {b:"app-attack",a:"Replay",s:"An attacker captures an authentication token in transit and re-sends the identical request an hour later, and the server accepts it.",w:"Valid captured traffic is re-sent. Timestamps and nonces are the standard defence."},
+
+  /* ---- threat actors ---- */
+  {b:"threat-actor",a:"Nation-state",s:"An intrusion shows eighteen months of undetected presence, custom malware never seen elsewhere, and targeting confined to defence contractors' design documents.",w:"Long dwell time, bespoke tooling and espionage targeting all indicate state resources."},
+  {b:"threat-actor",a:"Hacktivist",s:"A group defaces a company's website with a manifesto opposing its environmental record and leaks internal emails to journalists.",w:"Ideological motive with publicity as the objective — no financial demand."},
+  {b:"threat-actor",a:"Insider threat",s:"A sales manager under notice downloads the complete customer database to a personal drive during their final week.",w:"Authorized access misused by someone legitimately holding it."},
+  {b:"threat-actor",a:"Organized crime",s:"A structured group operates a ransomware-as-a-service platform with affiliates, negotiators and a support portal for victims.",w:"Structure, division of labour and profit motive — a criminal business."},
+  {b:"threat-actor",a:"Unskilled attacker",s:"A teenager downloads a point-and-click denial of service tool from a forum and aims it at their school's website, without understanding how it functions.",w:"Uses others' tools with no capability to build or adapt them."},
+  {b:"threat-actor",a:"Shadow IT",s:"A marketing team signs up for an unapproved cloud file-sharing service and begins storing customer lists in it, unknown to IT or security.",w:"Unsanctioned technology adopted internally, creating unmanaged exposure rather than deliberate attack."},
+
+  /* ---- network attacks ---- */
+  {b:"network-attack",a:"Evil twin",s:"In a hotel lobby, a laptop broadcasts an SSID identical to the hotel's guest network with a stronger signal. Guests connect to it and their traffic is intercepted.",w:"A counterfeit AP impersonating a legitimate SSID."},
+  {b:"network-attack",a:"Rogue access point",s:"A wireless survey finds an unmanaged consumer access point plugged into a floor switch, added by an employee who wanted better coverage at their desk.",w:"An unauthorized AP genuinely attached to the corporate network — no impersonation involved."},
+  {b:"network-attack",a:"On-path attack",s:"An attacker positions themselves between a client and a server, relaying and silently modifying traffic in both directions while both parties believe they are talking directly.",w:"Interception from a relaying position, formerly called man-in-the-middle."},
+  {b:"network-attack",a:"DNS poisoning",s:"Users typing the correct banking hostname are delivered to an attacker-controlled server because a resolver's cache holds a forged record.",w:"Name resolution itself has been corrupted."},
+  {b:"network-attack",a:"ARP poisoning",s:"An attacker floods the local segment with forged replies claiming the gateway's IP belongs to their own MAC address, causing hosts to send traffic through them.",w:"MAC-to-IP mappings are forged on the local segment."},
+  {b:"network-attack",a:"Deauthentication",s:"An attacker repeatedly sends management frames forcing wireless clients off the network, then captures the handshake as each device reconnects.",w:"Forced disconnection, usually as a precursor to capturing the reconnection handshake."},
+  {b:"network-attack",a:"Amplified DDoS",s:"Small forged DNS queries with the victim's spoofed source address produce responses fifty times larger, all directed at the victim.",w:"A service that answers with far more data than it receives is abused as a force multiplier."},
+
+  /* ================= DOMAIN 3 ================= */
+  /* ---- cloud models ---- */
+  {b:"cloud-model",a:"IaaS",s:"A company rents virtual machines and block storage. It is responsible for patching the guest operating systems and everything running on them.",w:"Responsibility begins at the OS — the hallmark of infrastructure as a service."},
+  {b:"cloud-model",a:"PaaS",s:"Developers push application code to a managed runtime. They never see or patch the underlying operating system, but they own the application and its data.",w:"The provider handles the runtime and below; the customer owns only the app and data."},
+  {b:"cloud-model",a:"SaaS",s:"The organization subscribes to a hosted CRM. It configures users and permissions but has no access to the servers, database or application code.",w:"A finished application consumed as a service — the customer manages only data and access."},
+  {b:"cloud-model",a:"Serverless",s:"Code is deployed as individual functions that execute on demand. The organization is billed per invocation and never provisions or scales any compute.",w:"No infrastructure is provisioned at all; the platform executes functions on demand."},
+  {b:"cloud-model",a:"On-premises",s:"All servers, storage and networking sit in the company's own data centre, purchased outright and maintained entirely by its own staff.",w:"The organization owns and operates the whole stack."},
+  {b:"cloud-model",a:"IaaS",s:"After migrating, the security team is still responsible for hardening the guest OS, configuring host firewalls and applying kernel patches.",w:"Guest OS responsibility remaining with the customer places this at the infrastructure layer."},
+
+  /* ---- recovery sites ---- */
+  {b:"recovery-site",a:"Hot site",s:"A second facility runs duplicate systems with data replicated continuously. In a failover test, operations resumed in eleven minutes.",w:"Fully equipped and current, enabling near-immediate takeover — and the most expensive to maintain."},
+  {b:"recovery-site",a:"Warm site",s:"An alternate facility holds racked servers and network connectivity, but the most recent backups must be restored before it can carry production load.",w:"Hardware ready, data stale — recovery in hours to days."},
+  {b:"recovery-site",a:"Cold site",s:"The contracted facility provides floor space, power and internet. Every server, switch and tape must be delivered and installed before operations can resume.",w:"Space and utilities only — cheapest to hold, slowest to activate."},
+  {b:"recovery-site",a:"Geographic dispersion",s:"The organization deliberately locates its primary and recovery facilities six hundred kilometres apart and in different flood basins.",w:"About the distance between sites rather than the readiness of either."},
+  {b:"recovery-site",a:"Warm site",s:"Management chooses a middle option: hardware pre-staged to reduce recovery time, but without paying for continuous data replication.",w:"The explicit cost-versus-speed compromise between hot and cold."},
+
+  /* ---- data states ---- */
+  {b:"data-state",a:"At rest",s:"Customer records are stored on an encrypted database volume in the data centre and are not currently being queried.",w:"Stored and stationary."},
+  {b:"data-state",a:"In transit",s:"An order is transmitted from the web front end to the payment gateway over a TLS 1.3 connection.",w:"Moving across a network between systems."},
+  {b:"data-state",a:"In use",s:"A decrypted spreadsheet is loaded into application memory while a user edits it.",w:"Loaded and being processed — the state that plain encryption cannot protect, since the data must be readable to be worked on."},
+  {b:"data-state",a:"In use",s:"An organization evaluates secure enclave technology so that a cloud provider cannot read records while its application is actively processing them.",w:"Enclaves exist specifically to protect data during processing."},
+  {b:"data-state",a:"At rest",s:"Nightly backup tapes are encrypted before being couriered to an offsite vault, where they sit until needed.",w:"Sitting on media in storage. Note the courier journey would be in transit — the question asks about the vaulted state."},
+
+  /* ---- network appliances ---- */
+  {b:"net-appliance",a:"Jump server",s:"Administrators must first connect to a single hardened, heavily logged host before they are permitted to reach any production server.",w:"One controlled, audited chokepoint into a protected zone."},
+  {b:"net-appliance",a:"Forward proxy",s:"All employee web browsing is routed through a device that enforces category filtering and caches frequently requested content before requests leave the network.",w:"Sits between internal users and the internet, handling outbound requests."},
+  {b:"net-appliance",a:"Reverse proxy",s:"Inbound requests to the company's public web servers terminate first on a device that handles TLS and forwards clean requests to the back-end pool.",w:"Faces inbound traffic on the servers' behalf — the opposite direction to a forward proxy."},
+  {b:"net-appliance",a:"Load balancer",s:"Incoming sessions are distributed across eight identical application servers according to their current connection counts.",w:"Distribution across a server pool."},
+  {b:"net-appliance",a:"Web application firewall",s:"A device inspects HTTP request bodies and blocks those containing SQL injection and cross-site scripting patterns before they reach the application.",w:"Application-layer HTTP inspection specifically."},
+  {b:"net-appliance",a:"IDS",s:"A sensor connected to a switch mirror port analyses copies of traffic and raises alerts, but has no ability to interrupt the flow.",w:"Observation and alerting only — the passive, out-of-band placement is the clue."},
+  {b:"net-appliance",a:"IPS",s:"A device sits directly in the traffic path and drops packets matching known exploit signatures before they reach their destination.",w:"Inline placement plus the ability to block."},
+  {b:"net-appliance",a:"Next-generation firewall",s:"A single appliance enforces policy by application identity rather than port alone, decrypts TLS for inspection and integrates threat intelligence feeds.",w:"Application awareness and deep inspection across protocols, beyond port-and-protocol filtering."},
+
+  /* ---- segmentation ---- */
+  {b:"segmentation",a:"Air-gapped",s:"The plant's control network has no physical connection of any kind to the corporate network or the internet. Updates arrive on scanned removable media.",w:"No connection exists at all."},
+  {b:"segmentation",a:"Screened subnet",s:"The company's public web and mail servers sit in a buffer network reachable from the internet, while the internal network sits behind a second firewall.",w:"A buffer zone for public-facing services, historically called a DMZ."},
+  {b:"segmentation",a:"VLAN",s:"Finance and engineering workstations share the same physical switches but are placed in separate broadcast domains that require routing to communicate.",w:"Logical separation over shared physical hardware."},
+  {b:"segmentation",a:"Zero trust",s:"Every request is authenticated, authorized and encrypted regardless of whether it originates inside the office or from a home network. Being on the LAN grants nothing.",w:"Trust is never conferred by network location."},
+  {b:"segmentation",a:"SD-WAN",s:"Branch offices route traffic dynamically across broadband, LTE and MPLS links based on real-time application performance, managed centrally by software.",w:"Software-defined selection across multiple WAN transports."},
+
+  /* ---- backups ---- */
+  {b:"backup-type",a:"Incremental",s:"Each night's job copies only what has changed since the previous night's job, whatever type it was. Restoring requires the last full backup plus every subsequent nightly set in order.",w:"Changes since the last backup of any kind — fastest to write, most sets needed to restore."},
+  {b:"backup-type",a:"Differential",s:"Each night's job copies everything changed since Sunday's full backup, so the job grows steadily larger through the week. A restore needs only the full plus the most recent night.",w:"Always measured from the last full — jobs grow, but restore needs just two sets."},
+  {b:"backup-type",a:"Full",s:"Every Sunday the job copies the entire dataset regardless of what has changed.",w:"Everything, every time."},
+  {b:"backup-type",a:"Snapshot",s:"Before applying a patch, the administrator captures a point-in-time image of the virtual machine so it can be reverted instantly if the patch fails.",w:"A point-in-time image, typically of a volume or VM."},
+  {b:"backup-type",a:"Replication",s:"Writes to the primary database are continuously mirrored to a secondary in another region as they occur.",w:"Continuous mirroring as changes happen, rather than a scheduled copy."},
+  {b:"backup-type",a:"Journaling",s:"Every transaction is written to a sequential log so the database can be reconstructed to any chosen moment before the corruption occurred.",w:"A change log enabling point-in-time reconstruction."},
+
+  /* ================= DOMAIN 4 ================= */
+  /* ---- authentication factors ---- */
+  {b:"auth-factor",a:"Something you know",s:"After entering their password, the user must also answer the name of their first school.",w:"Both a password and a security answer are memorized secrets — which is why this combination is not true multifactor."},
+  {b:"auth-factor",a:"Something you have",s:"The user must tap a physical FIDO2 security key plugged into the USB port to complete sign-in.",w:"A physical object in the user's possession."},
+  {b:"auth-factor",a:"Something you are",s:"The laptop unlocks after matching the user's fingerprint against the enrolled template.",w:"A biometric trait."},
+  {b:"auth-factor",a:"Somewhere you are",s:"A conditional access policy blocks authentication attempts originating outside the country where the employee is contracted to work.",w:"Location itself is the signal being evaluated."},
+  {b:"auth-factor",a:"Something you have",s:"A six-digit code generated by an authenticator app on the user's enrolled phone must be entered after the password.",w:"The code proves possession of the enrolled device — the phone is the factor, not the digits."},
+  {b:"auth-factor",a:"Something you are",s:"Access to the server room requires a successful iris scan.",w:"A biometric trait."},
+
+  /* ---- access control models ---- */
+  {b:"access-model",a:"MAC",s:"Documents carry classification labels and users carry clearances. The operating system enforces the comparison and no user, including the document's author, can grant access to someone without the clearance.",w:"System-enforced labels that no user can override."},
+  {b:"access-model",a:"DAC",s:"The employee who created a folder on the file server decides which colleagues may read it and shares it with them directly.",w:"The resource owner grants access at their own discretion."},
+  {b:"access-model",a:"RBAC",s:"When a nurse is hired, they are added to the Nursing group and automatically receive exactly the permissions that role carries.",w:"Permissions attach to the job function and are inherited through it."},
+  {b:"access-model",a:"ABAC",s:"Access is granted only when the user is in the Finance department, on a managed device, inside working hours, and the record is not marked restricted.",w:"Multiple evaluated attributes and conditions combine to reach the decision."},
+  {b:"access-model",a:"Rule-based",s:"A firewall applies the same ordered set of allow and deny rules to every packet, regardless of which user sent it.",w:"Uniform conditional rules applied system-wide, independent of identity."},
+  {b:"access-model",a:"RBAC",s:"An organization wants to simplify auditing by ensuring that permissions are reviewed per job function rather than per individual employee.",w:"Grouping entitlements by function is exactly what role-based access provides."},
+
+  /* ---- incident response ---- */
+  {b:"ir-phase",a:"Containment",s:"On confirming an active compromise, the analyst disables the affected switch port to isolate the host while preserving it for examination.",w:"Stopping the spread without yet removing anything — isolation is containment."},
+  {b:"ir-phase",a:"Eradication",s:"Once the host is isolated, the team removes the malware, deletes the attacker's persistence mechanism and closes the vulnerability that allowed entry.",w:"Removing the cause itself."},
+  {b:"ir-phase",a:"Recovery",s:"The rebuilt server is returned to production and monitored closely for a week to confirm normal behaviour.",w:"Restoring service and validating that it is healthy."},
+  {b:"ir-phase",a:"Preparation",s:"Before any incident occurs, the organization writes playbooks, assembles the response team, and stages forensic tooling.",w:"Everything done in advance of an incident."},
+  {b:"ir-phase",a:"Detection",s:"A SIEM correlation rule fires on an unusual volume of outbound traffic and generates an alert for triage.",w:"Recognizing that something may be an incident."},
+  {b:"ir-phase",a:"Analysis",s:"Analysts examine logs and memory captures to establish which accounts were used, what data was reached and how far the intruder moved.",w:"Determining scope and impact — after detection, before containment decisions."},
+  {b:"ir-phase",a:"Lessons learned",s:"Two weeks after closure, the team meets to review what slowed the response and updates the playbook accordingly.",w:"Post-incident review feeding improvement."},
+
+  /* ---- authentication protocols ---- */
+  {b:"federation",a:"SAML",s:"An employee clicks a link to a third-party HR portal and is signed in automatically when the corporate identity provider posts a signed XML assertion to it.",w:"Signed XML assertions for browser-based SSO between organizations."},
+  {b:"federation",a:"OAuth",s:"A user permits a scheduling app to read their calendar. The app receives a scoped token and never learns the user's password.",w:"Delegated authorization with scoped tokens."},
+  {b:"federation",a:"OpenID Connect",s:"An application uses a token to learn verified identity claims — subject, email, name — layered on top of an existing OAuth 2.0 authorization flow.",w:"The identity layer built on OAuth. OAuth alone authorizes; OIDC adds who the user is."},
+  {b:"federation",a:"LDAP",s:"An application queries the directory over port 389 to look up a user's group memberships and organizational unit.",w:"Directory query and modification."},
+  {b:"federation",a:"RADIUS",s:"Wireless controllers forward user credentials to a central server that authenticates them and returns the VLAN the client should be placed in.",w:"Centralized AAA for network access."},
+  {b:"federation",a:"Kerberos",s:"After initial sign-on, a Windows workstation presents a time-limited ticket obtained from the key distribution centre to reach a file server without re-entering a password.",w:"Ticket-granting with a KDC on a local network."},
+  {b:"federation",a:"TACACS+",s:"Network engineers authenticate to routers through a protocol that encrypts the full payload and handles authentication, authorization and accounting as three separate functions.",w:"Separating the three A's, with full payload encryption — the distinguishing features against RADIUS."},
+
+  /* ---- email authentication ---- */
+  {b:"email-auth",a:"SPF",s:"A DNS TXT record lists the IP addresses and hosts permitted to send mail on behalf of the domain.",w:"An authorized-sender list published in DNS."},
+  {b:"email-auth",a:"DKIM",s:"Outbound messages carry a cryptographic signature in the header, letting receivers verify the message was not altered in transit and genuinely came from the domain.",w:"Cryptographic signing for integrity and origin."},
+  {b:"email-auth",a:"DMARC",s:"The domain publishes a policy instructing receiving servers to quarantine messages that fail the other checks, and to send aggregate reports to a specified address.",w:"Policy and reporting layered on top of SPF and DKIM results."},
+  {b:"email-auth",a:"DMARC",s:"The security team wants visibility into who is sending mail claiming to be their domain, before enforcing any rejection.",w:"Aggregate reporting is unique to DMARC — SPF and DKIM produce no reports."},
+  {b:"email-auth",a:"SPF",s:"After migrating to a new mail provider, legitimate messages are rejected until the new provider's servers are added to a DNS record.",w:"An authorized-sender list that has fallen out of date."},
+
+  /* ---- finding classification ---- */
+  {b:"finding-class",a:"False positive",s:"A scanner reports a critical vulnerability in a web server. Manual verification confirms the affected module is not installed and the finding is not real.",w:"The tool alerted, but nothing is there."},
+  {b:"finding-class",a:"False negative",s:"A quarterly scan reports the host as clean. A subsequent penetration test exploits an unpatched service on that same host.",w:"The tool stayed silent while a genuine issue existed — the most dangerous of the four, because nothing prompts investigation."},
+  {b:"finding-class",a:"True positive",s:"A scanner flags an outdated OpenSSL version, and the administrator confirms the vulnerable build is indeed running.",w:"The tool alerted and was correct."},
+  {b:"finding-class",a:"True negative",s:"A scan reports no findings on a freshly hardened host, and independent review confirms there is nothing to find.",w:"The tool stayed silent and was correct."},
+  {b:"finding-class",a:"False positive",s:"Analysts note that tuning is needed because a rule generates hundreds of daily alerts that consistently turn out not to be genuine.",w:"Alerts firing on benign activity — the driver behind alert tuning."},
+
+  /* ---- vulnerability references ---- */
+  {b:"vuln-ref",a:"CVE",s:"A vendor advisory references the identifier CVE-2026-14872 when describing a specific flaw in its product.",w:"A unique identifier for one publicly disclosed vulnerability."},
+  {b:"vuln-ref",a:"CVSS",s:"The same advisory rates the flaw 9.8, driven by network attack vector, low complexity and no privileges required.",w:"A numeric severity score from 0.0 to 10.0."},
+  {b:"vuln-ref",a:"CWE",s:"A code review report classifies several findings under the general weakness category of improper neutralization of input during web page generation.",w:"A weakness class rather than a specific instance."},
+  {b:"vuln-ref",a:"OSINT",s:"Analysts compile a profile of the organization's exposed assets using public DNS records, job postings, certificate transparency logs and employee social media.",w:"Intelligence assembled entirely from public sources."},
+  {b:"vuln-ref",a:"Bug bounty",s:"The company publishes a scope and reward schedule inviting external researchers to submit vulnerabilities for payment.",w:"Paying external researchers for responsibly disclosed findings."},
+
+  /* ---- security tooling ---- */
+  {b:"sec-tooling",a:"SIEM",s:"Logs from firewalls, servers, endpoints and cloud services are collected centrally, normalized, and correlated so that related events across sources raise one alert.",w:"Aggregation and correlation across the estate."},
+  {b:"sec-tooling",a:"DLP",s:"An outbound email containing a spreadsheet of card numbers is automatically blocked and the sender's manager notified.",w:"Watching sensitive data attempting to leave."},
+  {b:"sec-tooling",a:"EDR",s:"An agent on each workstation records process creation and network connections, and can isolate the machine when it detects ransomware behaviour.",w:"Endpoint behavioural detection and response."},
+  {b:"sec-tooling",a:"XDR",s:"A platform correlates a suspicious endpoint process with an unusual cloud sign-in and an anomalous firewall flow, presenting them as a single incident.",w:"Correlation spanning endpoint, network and cloud — the extension beyond EDR."},
+  {b:"sec-tooling",a:"NAC",s:"A laptop connecting to the corporate network is placed in a remediation VLAN until it proves its antivirus signatures and patch level are current.",w:"Controlling admission to the network based on device posture."},
+  {b:"sec-tooling",a:"FIM",s:"An alert fires when a system binary in the web server's directory is modified outside a change window.",w:"Watching specific files for unauthorized change."},
+  {b:"sec-tooling",a:"UBA",s:"A tool learns that an accountant normally logs in from one office between 8am and 6pm, and flags a 3am authentication from another continent as anomalous.",w:"Baselining human behaviour and flagging deviation."},
+
+  /* ============ 1.2 CIA & non-repudiation ============ */
+  {b:"cia-triad",a:"Confidentiality",s:"Customer records are encrypted at rest so that anyone obtaining the storage media cannot read them.",w:"Preventing unauthorized disclosure — encryption's primary service."},
+  {b:"cia-triad",a:"Integrity",s:"A published software download is accompanied by a SHA-256 checksum so users can verify the file was not altered.",w:"Detecting alteration. Hashing serves integrity; it provides no secrecy whatsoever."},
+  {b:"cia-triad",a:"Availability",s:"An application is deployed across three availability zones behind a load balancer so that the loss of one does not interrupt service.",w:"Keeping the service reachable when needed."},
+  {b:"cia-triad",a:"Non-repudiation",s:"Contracts are signed with a certificate bound to the individual, so the signer cannot later credibly claim they did not sign it.",w:"The inability to deny an action — what a digital signature adds beyond integrity."},
+  {b:"cia-triad",a:"Integrity",s:"A file integrity monitor alerts when a system binary changes outside a maintenance window.",w:"Detecting unauthorized modification."},
+  {b:"cia-triad",a:"Availability",s:"Uninterruptible power supplies and a standby generator are installed so the data centre survives a utility outage.",w:"Continuity of access to the service."},
+  {b:"cia-triad",a:"Confidentiality",s:"A screen privacy filter is fitted to laptops used by staff who work on trains.",w:"Preventing disclosure to unauthorized observers."},
+  {b:"cia-triad",a:"Non-repudiation",s:"An audit log records which administrator approved each privileged change, signed so entries cannot be altered or disowned.",w:"Binding an action to an actor in a way they cannot later deny."},
+
+  /* ============ 1.2 AAA ============ */
+  {b:"aaa",a:"Authentication",s:"A user enters their password and approves a push notification on their enrolled phone.",w:"Proving the identity claim."},
+  {b:"aaa",a:"Authorization",s:"Having signed in successfully, the user finds the payroll folder is not visible to them because their role does not include it.",w:"Determining what an already-authenticated identity may do."},
+  {b:"aaa",a:"Accounting",s:"Every file the user opens, modifies or deletes on the share is written to a log retained for twelve months.",w:"Recording what was done, after the fact."},
+  {b:"aaa",a:"Authorization",s:"A firewall permits the authenticated contractor to reach the build server but not the finance subnet.",w:"Permission scope for a known identity."},
+  {b:"aaa",a:"Accounting",s:"A cloud provider tracks each customer's compute-hour consumption in order to bill them.",w:"Usage recording — billing is an accounting function."},
+  {b:"aaa",a:"Authentication",s:"A server presents a certificate that the client validates against a trusted root before the session proceeds.",w:"Verifying an identity claim, here of a machine rather than a person."},
+
+  /* ============ 1.2 Zero Trust ============ */
+  {b:"zero-trust",a:"Policy engine",s:"The component evaluates the user's identity, device posture and request against policy, and decides whether to grant access.",w:"The decision itself is made here."},
+  {b:"zero-trust",a:"Policy administrator",s:"Acting on the decision, this component issues the session credential to the client, or revokes it when the session must end.",w:"Executes the decision by establishing or tearing down the session."},
+  {b:"zero-trust",a:"Policy enforcement point",s:"A gateway sits in the traffic path and actually permits or blocks the connection to the resource.",w:"Where the decision meets the traffic — the data plane component."},
+  {b:"zero-trust",a:"Adaptive identity",s:"Access decisions weigh not just the credential but the device's patch level, the country of origin and whether the behaviour matches the user's norm.",w:"Identity evaluated with live context rather than as a static credential."},
+  {b:"zero-trust",a:"Implicit trust zone",s:"Once a subject has passed the enforcement point, it can reach the resources inside this area without re-verification at each hop.",w:"The region reached after enforcement — kept deliberately small in a Zero Trust design."},
+  {b:"zero-trust",a:"Policy engine",s:"Which component would you reconfigure to require managed devices for finance data?",w:"Policy evaluation logic lives in the engine."},
+
+  /* ============ 1.2 Deception ============ */
+  {b:"deception",a:"Honeypot",s:"A deliberately vulnerable-looking server is placed on the network with no production purpose, purely to attract and observe attackers.",w:"A single decoy system."},
+  {b:"deception",a:"Honeynet",s:"An entire decoy subnet of servers, workstations and simulated traffic is stood up to study attacker behaviour at scale.",w:"A whole decoy network, not one host."},
+  {b:"deception",a:"Honeyfile",s:"A document named executive_salaries_2026.xlsx is placed on the share; it has no legitimate purpose and any access to it raises an alert.",w:"A single bait file."},
+  {b:"deception",a:"Honeytoken",s:"A fake set of API credentials is seeded into a repository. Any use of them anywhere on the internet proves the repository was scraped.",w:"Bait data or credentials whose use anywhere is itself the signal."},
+  {b:"deception",a:"Honeypot",s:"Security wants to study the tooling used against exposed RDP, so they deploy one instrumented decoy host to the perimeter.",w:"One decoy system."},
+  {b:"deception",a:"Honeytoken",s:"A fictitious customer record is inserted into the database. When marketing mail arrives at that fake address, the list has been sold.",w:"Fake data acting as a tracer."},
+
+  /* ============ 1.3 Change management ============ */
+  {b:"change-mgmt",a:"Impact analysis",s:"Before the firewall upgrade, the team documents which applications traverse that device and what would break if the change misfires.",w:"Assessing what the change could affect, before it happens."},
+  {b:"change-mgmt",a:"Backout plan",s:"The change record includes the exact steps and the configuration snapshot needed to return the device to its previous state.",w:"The documented route back if the change fails."},
+  {b:"change-mgmt",a:"Maintenance window",s:"The change is scheduled for Sunday between 02:00 and 05:00, the agreed period in which the business tolerates disruption.",w:"The agreed time during which disruption is acceptable."},
+  {b:"change-mgmt",a:"Approval process",s:"The change cannot proceed until the change advisory board and the application owner have both signed off.",w:"Authorization before the change proceeds."},
+  {b:"change-mgmt",a:"Test results",s:"The submission includes evidence that the patch was applied successfully in the staging environment and the application still functioned.",w:"Evidence from a non-production trial."},
+  {b:"change-mgmt",a:"Standard operating procedure",s:"The organization documents a repeatable, numbered process that every routine firewall rule change must follow.",w:"The repeatable documented process for a class of change."},
+  {b:"change-mgmt",a:"Version control",s:"Every revision of the router configuration is committed to a repository so any two versions can be compared and an earlier one retrieved.",w:"Tracking successive revisions of configuration."},
+  {b:"change-mgmt",a:"Impact analysis",s:"Reviewing the proposal, an engineer notes that a legacy application still depends on the protocol due to be disabled.",w:"Identifying dependencies and consequences before approval — the analysis, not the rollback."},
+
+  /* ============ 1.4 Crypto primitives ============ */
+  {b:"crypto-primitive",a:"Symmetric encryption",s:"A 400 GB backup archive is encrypted with a single shared key using AES-256, chosen because it is fast enough for that volume.",w:"One key, bulk data, speed — symmetric."},
+  {b:"crypto-primitive",a:"Asymmetric encryption",s:"A sender encrypts a message with the recipient's public key so that only the matching private key can open it.",w:"A key pair with distinct public and private halves."},
+  {b:"crypto-primitive",a:"Hashing",s:"Stored passwords are converted to fixed-length digests that cannot be reversed to recover the original.",w:"One-way, keyless, fixed length."},
+  {b:"crypto-primitive",a:"Digital signature",s:"A software vendor hashes its installer and encrypts the hash with its private key, so recipients can verify both integrity and origin.",w:"Hash plus private-key encryption — integrity, authenticity and non-repudiation together."},
+  {b:"crypto-primitive",a:"Key exchange",s:"Two parties who have never met derive a shared secret over an untrusted network without transmitting the secret itself.",w:"Establishing a shared key over an open channel — Diffie-Hellman's purpose."},
+  {b:"crypto-primitive",a:"Symmetric encryption",s:"After the TLS handshake completes, the bulk of the session data is protected with a single negotiated session key.",w:"TLS uses asymmetric crypto to agree a key, then symmetric for the data — this describes the second half."},
+  {b:"crypto-primitive",a:"Asymmetric encryption",s:"Which primitive underpins issuing a certificate that binds an identity to a verifiable key?",w:"PKI rests on public/private key pairs."},
+
+  /* ============ 1.4 Hash hardening ============ */
+  {b:"hash-protect",a:"Salting",s:"Each password receives a unique random value before hashing, so two users choosing the same password produce entirely different digests.",w:"Unique per-password randomness — and the specific reason rainbow tables stop working."},
+  {b:"hash-protect",a:"Key stretching",s:"The hashing function is deliberately configured to take around 250 milliseconds per computation, making large-scale cracking impractical.",w:"Deliberate slowness as the defence."},
+  {b:"hash-protect",a:"HMAC",s:"An API request carries a digest computed from the message body combined with a secret key shared by both parties, proving the request is authentic and unmodified.",w:"A hash keyed with a shared secret — authenticity, not password storage."},
+  {b:"hash-protect",a:"Salting",s:"An auditor notes that the password database shows identical hashes for many accounts and recommends the fix that would prevent this.",w:"Identical hashes for identical passwords is exactly the symptom of missing salt."},
+  {b:"hash-protect",a:"Key stretching",s:"PBKDF2 is configured with 600,000 iterations rather than the default.",w:"Iteration count is the key-stretching parameter."},
+  {b:"hash-protect",a:"Hashing",s:"A file's fixed-length digest is recorded so that any later change to the file can be detected, with no key involved at any point.",w:"Plain one-way digest with nothing added."},
+
+  /* ============ 1.4 Encryption scope ============ */
+  {b:"encryption-level",a:"Full-disk",s:"A laptop's entire drive, including the operating system, is encrypted and unlocked by a pre-boot credential.",w:"The whole drive including the OS."},
+  {b:"encryption-level",a:"File",s:"Two specific documents in a shared folder are individually encrypted; everything else in the folder is readable.",w:"Individual files protected independently."},
+  {b:"encryption-level",a:"Database",s:"Transparent data encryption is enabled so the entire database file is protected on disk as a single unit.",w:"The database as a whole."},
+  {b:"encryption-level",a:"Record",s:"Only the national ID column is encrypted within the customer table; every other column is stored in the clear.",w:"Individual fields or rows within a database."},
+  {b:"encryption-level",a:"Partition",s:"Only the D: partition holding project data is encrypted; the system partition is not.",w:"One partition, others untouched."},
+  {b:"encryption-level",a:"Volume",s:"A mounted encrypted container holds a project's working files; the rest of the filesystem is unaffected.",w:"A defined logical volume or container."},
+
+  /* ============ 1.4 Certificates ============ */
+  {b:"cert-concept",a:"CSR",s:"An administrator generates a key pair and produces a file containing the public key and organizational details to send to the certificate authority.",w:"The signing request — generated by the requester, sent to the CA."},
+  {b:"cert-concept",a:"CRL",s:"Clients periodically download a published file listing all certificates the authority has revoked ahead of their expiry date.",w:"A published list, fetched in bulk and periodically stale."},
+  {b:"cert-concept",a:"OCSP",s:"Rather than downloading a list, the client queries the authority in real time about the status of the single certificate it has been presented.",w:"A live per-certificate query."},
+  {b:"cert-concept",a:"Wildcard certificate",s:"One certificate secures www, mail, api and shop under the same domain without separate issuance for each.",w:"Covers a domain and its first-level subdomains."},
+  {b:"cert-concept",a:"Self-signed certificate",s:"An internal test server presents a certificate it generated itself. Browsers warn because no recognized authority vouches for it.",w:"Signed by its own key, so trusted only where explicitly installed."},
+  {b:"cert-concept",a:"Root of trust",s:"The browser validates a chain upward until it reaches a certificate already in its trusted store, which anchors the whole chain.",w:"The trust anchor the chain terminates at."},
+  {b:"cert-concept",a:"OCSP",s:"To avoid every client querying the authority separately, the web server obtains a signed status response in advance and presents it during the handshake.",w:"Stapling is an OCSP optimization — the server does the query on the clients' behalf."},
+
+  /* ============ 5.3 Vendor assessment ============ */
+  {b:"vendor-assessment",a:"Right-to-audit clause",s:"The contract grants the customer the power to inspect the supplier's security controls on reasonable notice.",w:"A contractual power of inspection."},
+  {b:"vendor-assessment",a:"Vendor questionnaire",s:"Before onboarding, the supplier completes a 140-item form describing its encryption, retention and incident processes, answered entirely by its own staff.",w:"Self-reported answers — cheap, and only as reliable as the respondent."},
+  {b:"vendor-assessment",a:"Independent assessment",s:"An outside firm with no stake in the relationship evaluates the supplier's controls and issues its own report.",w:"An outside party performs and reports."},
+  {b:"vendor-assessment",a:"Supply chain analysis",s:"Before purchase, the buyer traces where the appliance's components originate and which sub-suppliers touch the firmware.",w:"Examining component origin and sub-supplier integrity."},
+  {b:"vendor-assessment",a:"Rules of engagement",s:"Before testing begins, both parties document what is in scope, which hours testing may occur, and which techniques are prohibited.",w:"Scope and limits agreed before testing — not the test itself."},
+  {b:"vendor-assessment",a:"Due diligence",s:"Before signing, the buyer researches the supplier's financial stability, ownership, litigation history and references.",w:"Investigation before commitment."},
+  {b:"vendor-assessment",a:"Penetration testing",s:"With written authorization, a team actively attempts to exploit the supplier's externally facing systems.",w:"Active exploitation against the vendor."},
+
+  /* ============ 5.4 Consequences ============ */
+  {b:"compliance-consequence",a:"Fines",s:"A data protection authority issues a monetary penalty of €4.2 million following an investigation into a breach.",w:"A regulator imposing money."},
+  {b:"compliance-consequence",a:"Loss of license",s:"A regulator withdraws the firm's authorization to handle client funds, ending that line of business entirely.",w:"Withdrawal of permission to operate."},
+  {b:"compliance-consequence",a:"Reputational damage",s:"Following disclosure, the company's customer retention falls sharply and two prospective clients cite the incident in declining to proceed.",w:"Market and public confidence, imposed by nobody in particular."},
+  {b:"compliance-consequence",a:"Contractual impacts",s:"A major customer invokes a termination-for-cause clause after the supplier fails the security obligations written into their agreement.",w:"Consequences arising under an agreement between the parties."},
+  {b:"compliance-consequence",a:"Sanctions",s:"A regulator bars the firm from onboarding new customers for six months and requires quarterly reporting.",w:"Restrictions and punitive measures short of removing the license."},
+  {b:"compliance-consequence",a:"Fines",s:"Card brands levy monetary penalties against an acquirer following a PCI DSS compliance failure.",w:"A monetary penalty — note PCI DSS is contractual, but the penalty here is still a fine."},
+
+  /* ============ 5.4 Due diligence / due care ============ */
+  {b:"compliance-monitoring",a:"Due diligence",s:"Before acquiring a company, the buyer investigates its security posture, open litigation and breach history.",w:"Investigation before a decision — the research phase."},
+  {b:"compliance-monitoring",a:"Due care",s:"The organization patches promptly, trains staff annually and reviews access quarterly, demonstrating ongoing reasonable conduct.",w:"Ongoing reasonable action — the doing, not the researching."},
+  {b:"compliance-monitoring",a:"Attestation",s:"An officer signs a formal statement to a regulator asserting that the required controls are implemented and operating.",w:"A formal signed assertion of compliance."},
+  {b:"compliance-monitoring",a:"Acknowledgement",s:"Each employee clicks to confirm they have read and accepted the acceptable use policy during onboarding.",w:"A user confirming receipt and acceptance — not an assertion about controls."},
+  {b:"compliance-monitoring",a:"Internal monitoring",s:"The compliance team runs its own quarterly control checks and reports the results to the audit committee.",w:"The organization checking itself."},
+  {b:"compliance-monitoring",a:"External monitoring",s:"A contracted third party continuously tracks the organization's compliance posture and reports findings to the regulator.",w:"An outside party performing the checking."},
+  {b:"compliance-monitoring",a:"Due care",s:"A court considers whether the company acted as a reasonable organization would have, given what it knew at the time.",w:"The reasonable-person standard applied to ongoing conduct."},
+
+  /* ============ 5.4 Privacy ============ */
+  {b:"privacy-concept",a:"Right to be forgotten",s:"A former customer submits a request requiring the company to erase all personal data it holds about them.",w:"Erasure on request by the individual."},
+  {b:"privacy-concept",a:"Data retention",s:"Policy states that call recordings are kept for exactly 24 months and then automatically deleted.",w:"How long data may or must be kept."},
+  {b:"privacy-concept",a:"Data inventory",s:"The privacy team compiles a catalogue of every system holding personal data, what fields it contains and who owns it.",w:"Knowing what you hold and where — the prerequisite for every other privacy obligation."},
+  {b:"privacy-concept",a:"Data sovereignty",s:"A company must keep the personal data of a country's residents on servers physically located within that country's borders.",w:"Data governed by the laws of the territory it sits in."},
+  {b:"privacy-concept",a:"Data subject",s:"Identify the term for the living individual whom a set of personal data describes.",w:"The person the data is about."},
+  {b:"privacy-concept",a:"Data retention",s:"Legal advises that deleting records too early is as much a compliance failure as keeping them too long.",w:"Retention has both a floor and a ceiling."},
+
+  /* ============ 5.6 Anomalous behaviour ============ */
+  {b:"anomalous-behavior",a:"Risky",s:"An employee, aware it is prohibited, forwards work documents to a personal email account so they can work from a home computer.",w:"Knowing conduct that deliberately accepts the risk to get something done."},
+  {b:"anomalous-behavior",a:"Unintentional",s:"A staff member replies to a convincing supplier email and attaches an invoice containing colleagues' bank details, believing the request genuine.",w:"An honest mistake with no intent to circumvent anything."},
+  {b:"anomalous-behavior",a:"Unexpected",s:"An employee who has never accessed the engineering file share begins browsing it at 2am. There is no known reason and no policy breach yet.",w:"Deviation from that user's own baseline, with cause unknown — the behaviour that triggers investigation rather than discipline."},
+  {b:"anomalous-behavior",a:"Risky",s:"A developer disables certificate validation in a production service to stop an error appearing, knowing what the setting does.",w:"Deliberate acceptance of a known risk."},
+  {b:"anomalous-behavior",a:"Unintentional",s:"A user selects the wrong recipient from autocomplete and sends a payroll spreadsheet to an external address.",w:"An error, not a decision."},
+  {b:"anomalous-behavior",a:"Unexpected",s:"A finance account begins authenticating from a new country while the employee's calendar shows them in the office.",w:"Out of character and unexplained — impossible travel is the classic indicator."},
+
+  /* ============ 5.6 Awareness topics ============ */
+  {b:"awareness-topic",a:"Operational security",s:"Staff are trained not to discuss system names, project details or travel plans on public social media.",w:"Limiting what is disclosed about work and systems."},
+  {b:"awareness-topic",a:"Insider threat",s:"Managers are taught to recognize and report indicators such as unexplained affluence, resentment after being passed over, or unusual after-hours access by a colleague.",w:"Recognizing risk originating from inside the organization."},
+  {b:"awareness-topic",a:"Removable media and cables",s:"Employees are warned never to plug in a USB drive found in the car park, and to avoid unknown public charging cables.",w:"Unknown physical media and cables as an attack vector."},
+  {b:"awareness-topic",a:"Hybrid and remote work",s:"Guidance covers securing the home router, avoiding shoulder surfing in cafés and using a privacy screen in shared spaces.",w:"Working securely away from the office."},
+  {b:"awareness-topic",a:"Phishing recognition",s:"A simulated campaign is run monthly, and staff are trained to use the Report button rather than simply deleting suspicious mail.",w:"Identifying and reporting fraudulent messages."},
+  {b:"awareness-topic",a:"Social engineering",s:"Reception staff are trained to verify identity independently when a caller claims urgency and authority to bypass normal process.",w:"Resisting manipulation and pretexting."},
+  {b:"awareness-topic",a:"Password management",s:"Training covers using the corporate password manager, never reusing credentials across sites, and choosing long passphrases.",w:"Credential hygiene."},
+
+  /* ============ 4.2 Asset disposal ============ */
+  {b:"asset-disposal",a:"Sanitization",s:"Drives from decommissioned laptops are overwritten to standard and then reissued to a training lab.",w:"Data removed, media still usable — the reuse is the giveaway."},
+  {b:"asset-disposal",a:"Destruction",s:"Drives containing classified material are fed through a shredder that reduces them to particles.",w:"The media does not survive."},
+  {b:"asset-disposal",a:"Certification",s:"The disposal vendor returns a signed document listing each serial number destroyed, the method used and the date.",w:"Documented proof that disposal happened."},
+  {b:"asset-disposal",a:"Data retention",s:"Before any disposal is scheduled, policy determines that these records must be kept for seven years.",w:"The rule governing how long to keep it, which precedes disposal."},
+  {b:"asset-disposal",a:"Sanitization",s:"A self-encrypting drive is disposed of by destroying its encryption key, rendering the remaining data unreadable while the drive still functions.",w:"Cryptographic erase — data gone, media reusable."},
+  {b:"asset-disposal",a:"Destruction",s:"Backup tapes holding regulated health data are incinerated at a licensed facility.",w:"Physical destruction of the media."},
+
+  /* ===== top-ups: boundaries that were too thin for a 3-item repair ===== */
+  {b:"recovery-site",a:"Hot site",s:"Regulatory rules require the trading platform to resume within fifteen minutes, so the alternate facility runs live with replicated data at all times.",w:"A sub-hour requirement leaves no option but a continuously current site."},
+  {b:"recovery-site",a:"Cold site",s:"A low-priority archive service is covered by a contract for empty rack space and power, accepting that recovery would take several weeks.",w:"Space and utilities only, with recovery measured in weeks."},
+  {b:"recovery-site",a:"Geographic dispersion",s:"An auditor notes that the primary and backup facilities sit four kilometres apart on the same power grid and flood plain, and recommends the fix.",w:"The problem is proximity, not readiness — the two sites are too close to survive one regional event."},
+
+  {b:"data-state",a:"In transit",s:"Replication traffic between two data centres is protected by an IPSec tunnel.",w:"Moving between systems across a network."},
+  {b:"data-state",a:"At rest",s:"An archived project folder sits on a NAS untouched for two years.",w:"Stored and stationary."},
+  {b:"data-state",a:"In use",s:"A analyst asks why encryption alone cannot protect records from a compromised application process that is actively querying them.",w:"Data must be decrypted to be processed — the gap that defines the in-use state."},
+
+  {b:"segmentation",a:"VLAN",s:"Guest wireless clients are placed in a separate broadcast domain that can reach the internet but not any internal subnet.",w:"Logical separation on shared infrastructure."},
+  {b:"segmentation",a:"Zero trust",s:"After a breach spread laterally from a single compromised laptop, the organization adopts a model where being on the internal network confers no access at all.",w:"Removing location-based implicit trust — the direct answer to lateral movement."},
+  {b:"segmentation",a:"Air-gapped",s:"A certificate authority's root signing key is held on a system that has never been connected to any network and is stored in a safe between uses.",w:"No connection has ever existed — the standard protection for an offline root."},
+
+  {b:"email-auth",a:"DKIM",s:"A recipient's mail server recomputes a hash of the message headers and body and verifies it against a signature checked using a public key published in the sender's DNS.",w:"Signature verification against a published public key."},
+  {b:"email-auth",a:"SPF",s:"Which mechanism would fail if an attacker sent mail claiming to be from the domain, from a server the domain never authorized?",w:"An unauthorized sending server is exactly what the authorized-sender list catches."},
+  {b:"email-auth",a:"DMARC",s:"The domain moves its policy from p=none to p=reject once reporting confirms all legitimate senders are passing.",w:"The policy directive and its enforcement level belong to DMARC."},
+
+  {b:"finding-class",a:"True positive",s:"An IDS alerts on traffic matching an exploit signature, and packet capture confirms an actual exploitation attempt.",w:"Alerted, and correct."},
+  {b:"finding-class",a:"False negative",s:"Which outcome should worry a security team most, given that nothing about it prompts anyone to investigate?",w:"A silent tool over a real issue produces no signal at all — the others at least generate something to check."},
+  {b:"finding-class",a:"False positive",s:"A DLP rule blocks an outbound file because it resembles card data, but review shows the numbers are internal part codes.",w:"Alerted, but nothing genuine underneath."},
+
+  {b:"vuln-ref",a:"CVSS",s:"A team uses the base, temporal and environmental metric groups to arrive at a severity figure tailored to its own deployment.",w:"The metric groups are CVSS structure."},
+  {b:"vuln-ref",a:"CVE",s:"A patch management report lists identifiers so that each specific flaw can be tracked unambiguously across vendors and scanners.",w:"A unique identifier per vulnerability, which is what makes cross-tool tracking possible."},
+  {b:"vuln-ref",a:"OSINT",s:"An analyst reviews certificate transparency logs and public code repositories to enumerate an organization's internet-facing assets.",w:"Public sources only."}
+];
+
+/* ============================================================
+   GLOSSARY — [abbreviation, expansion, optional gloss]
+   ============================================================ */
+const GLOSSARY = [
+["AAA","Authentication, Authorization, and Accounting","Who are you, what may you do, what did you do. RADIUS and TACACS+ are AAA services."],
+["ACL","Access Control List","An ordered list of allow/deny rules; order matters — first match wins."],
+["AES","Advanced Encryption Standard","The symmetric block cipher standard; AES-256 denotes the key length."],
+["AH","Authentication Header","IPSec component giving integrity and authentication but no encryption."],
+["AI","Artificial Intelligence"],
+["AIS","Automated Indicator Sharing","Machine-speed exchange of threat indicators between organizations."],
+["ALE","Annualized Loss Expectancy","SLE × ARO — expected loss per year."],
+["AP","Access Point"],
+["API","Application Programming Interface"],
+["APT","Advanced Persistent Threat","Long-dwell, well-resourced intrusion; typically nation-state."],
+["ARO","Annualized Rate of Occurrence","How many times per year the event is expected."],
+["ARP","Address Resolution Protocol","Maps IP to MAC on the local segment; forging these mappings is ARP poisoning."],
+["ASLR","Address Space Layout Randomization","Randomizes memory layout to frustrate buffer-overflow exploits."],
+["ATT&CK","Adversarial Tactics, Techniques, and Common Knowledge","MITRE's catalogue of real-world adversary behaviour."],
+["AUP","Acceptable Use Policy","Managerial control; directive by type."],
+["AV","Antivirus / Asset Value","Watch context — in risk math AV is asset value, and AV × EF = SLE."],
+["BCP","Business Continuity Planning","Keeping the business running; broader than disaster recovery."],
+["BGP","Border Gateway Protocol"],
+["BIA","Business Impact Analysis","Produces RTO, RPO, MTTR and MTBF figures."],
+["BIOS","Basic Input/Output System"],
+["BPA","Business Partners Agreement","Terms between partners — profit, ownership, responsibilities."],
+["BPDU","Bridge Protocol Data Unit","Spanning-tree frames; BPDU guard protects against rogue switches."],
+["BYOD","Bring Your Own Device"],
+["CA","Certificate Authority","Issues and signs certificates; the root of trust in a PKI."],
+["CAPTCHA","Completely Automated Public Turing Test to Tell Computers and Humans Apart"],
+["CASB","Cloud Access Security Broker","Policy enforcement point between users and cloud services."],
+["CBC","Cipher Block Chaining","Block cipher mode; each block XORed with the previous ciphertext."],
+["CCMP","Counter Mode/CBC-MAC Protocol","The encryption protocol used by WPA2."],
+["CCTV","Closed-Circuit Television","Detective by type, physical by category."],
+["CERT","Computer Emergency Response Team"],
+["CHAP","Challenge Handshake Authentication Protocol","Challenge–response; avoids sending the password itself."],
+["CIA","Confidentiality, Integrity, Availability","The three security objectives. Non-repudiation is often added as a fourth."],
+["CIRT","Computer Incident Response Team"],
+["COOP","Continuity of Operations Planning"],
+["COPE","Corporate Owned, Personally Enabled","Company owns the device, personal use permitted."],
+["CRL","Certificate Revocation List","A published list of revoked certificates; OCSP is the real-time alternative."],
+["CSP","Cloud Service Provider"],
+["CSR","Certificate Signing Request","Contains the public key and identity; sent to a CA to be signed."],
+["CSRF","Cross-Site Request Forgery","Forces an authenticated browser to submit an unwanted action. Also XSRF."],
+["CVE","Common Vulnerabilities and Exposures","Identifier for one specific disclosed vulnerability."],
+["CVSS","Common Vulnerability Scoring System","Severity score from 0.0 to 10.0."],
+["CWE","Common Weakness Enumeration","Classifies the weakness type, not the individual instance."],
+["CYOD","Choose Your Own Device"],
+["DAC","Discretionary Access Control","The resource owner decides who gets access."],
+["DDoS","Distributed Denial of Service"],
+["DEP","Data Execution Prevention","Marks memory regions non-executable to block certain exploits."],
+["DES","Data Encryption Standard","Obsolete 56-bit symmetric cipher; superseded by AES."],
+["DHCP","Dynamic Host Configuration Protocol"],
+["DHE","Diffie-Hellman Ephemeral","Key exchange producing a new key per session — provides forward secrecy."],
+["DKIM","Domain Keys Identified Mail","Cryptographically signs outbound mail so tampering is detectable."],
+["DLP","Data Loss Prevention","Detects and blocks sensitive data leaving the organization."],
+["DMARC","Domain-based Message Authentication, Reporting and Conformance","Policy plus reporting layered on SPF and DKIM results."],
+["DNAT","Destination Network Address Translation"],
+["DNS","Domain Name System"],
+["DoS","Denial of Service"],
+["DPO","Data Privacy Officer","Required under GDPR for many organizations."],
+["DRP","Disaster Recovery Plan","Restoring IT after a disaster; a subset of BCP."],
+["DSA","Digital Signature Algorithm"],
+["EAP","Extensible Authentication Protocol","A framework, not a single method — used with 802.1X."],
+["ECC","Elliptic Curve Cryptography","Asymmetric crypto giving equivalent strength at much smaller key sizes."],
+["ECDHE","Elliptic Curve Diffie-Hellman Ephemeral"],
+["ECDSA","Elliptic Curve Digital Signature Algorithm"],
+["EDR","Endpoint Detection and Response","Behavioural monitoring and response on endpoints."],
+["EF","Exposure Factor","Proportion of asset value lost in one event; AV × EF = SLE."],
+["EFS","Encrypting File System","Windows file-level encryption."],
+["ESP","Encapsulating Security Payload","IPSec component providing encryption as well as integrity."],
+["FDE","Full Disk Encryption","Protects data at rest; useless once the system is booted and unlocked."],
+["FIM","File Integrity Monitoring","Alerts when monitored files change."],
+["FRR","False Rejection Rate","Biometric measure — legitimate users wrongly denied. FAR is the opposite."],
+["FTP","File Transfer Protocol","Ports 20/21, unencrypted. FTPS uses TLS; SFTP runs over SSH."],
+["GCM","Galois/Counter Mode","Block cipher mode providing both confidentiality and authentication."],
+["GDPR","General Data Protection Regulation","EU privacy regulation; defines controller and processor roles."],
+["GPO","Group Policy Object","Windows mechanism for pushing configuration — a technical control."],
+["GRE","Generic Routing Encapsulation"],
+["HA","High Availability"],
+["HIDS","Host-based Intrusion Detection System"],
+["HIPS","Host-based Intrusion Prevention System"],
+["HMAC","Hash-based Message Authentication Code","Hash plus a secret key — provides integrity and authenticity."],
+["HOTP","HMAC-based One-Time Password","Counter-based; the code changes per use, not per interval."],
+["HSM","Hardware Security Module","Dedicated appliance generating and storing keys at scale."],
+["HTTPS","Hypertext Transfer Protocol Secure","HTTP over TLS, port 443."],
+["IaaS","Infrastructure as a Service","Customer manages the OS and everything above it."],
+["IaC","Infrastructure as Code","Provisioning defined in version-controlled definition files."],
+["IAM","Identity and Access Management"],
+["ICS","Industrial Control Systems","Often paired with SCADA; long lifecycles and legacy protocols."],
+["IdP","Identity Provider","Authenticates the user and issues assertions to service providers."],
+["IDS","Intrusion Detection System","Detects and alerts; does not block. Compare IPS."],
+["IKE","Internet Key Exchange","Negotiates the security association for IPSec."],
+["IoC","Indicators of Compromise","Artifacts suggesting a breach — hashes, IPs, domains, behaviours."],
+["IoT","Internet of Things"],
+["IPS","Intrusion Prevention System","Sits inline and can drop traffic. Compare IDS."],
+["IPSec","Internet Protocol Security","Layer 3 tunnelling; AH for integrity, ESP for encryption."],
+["IR","Incident Response"],
+["IV","Initialization Vector","Random value ensuring identical plaintext encrypts differently; WEP's reuse broke it."],
+["KDC","Key Distribution Center","Kerberos component issuing tickets."],
+["L2TP","Layer 2 Tunneling Protocol","No encryption of its own — normally paired with IPSec."],
+["LDAP","Lightweight Directory Access Protocol","Port 389; LDAPS is 636."],
+["MAC","Mandatory Access Control / Media Access Control / Message Authentication Code","Three different meanings — read the context carefully."],
+["MDM","Mobile Device Management"],
+["MFA","Multifactor Authentication","Requires factors from different categories, not two of the same."],
+["MOA","Memorandum of Agreement","Binding; defines roles and responsibilities. Compare MOU."],
+["MOU","Memorandum of Understanding","Expresses intent; generally not binding."],
+["MSA","Master Service Agreement","Umbrella terms for an ongoing relationship; SOWs sit under it."],
+["MSSP","Managed Security Service Provider"],
+["MTBF","Mean Time Between Failures","Measured reliability — drives spares and replacement planning."],
+["MTTR","Mean Time to Repair","Measured average time to restore after a failure."],
+["NAC","Network Access Control","Controls which devices may join, often based on posture."],
+["NAT","Network Address Translation"],
+["NDA","Non-Disclosure Agreement"],
+["NGFW","Next-Generation Firewall","Adds application awareness and deep inspection."],
+["NIDS","Network-based Intrusion Detection System"],
+["NIST","National Institute of Standards and Technology","Publishes the Cybersecurity Framework and the SP 800 series."],
+["NTLM","New Technology LAN Manager","Legacy Windows authentication; vulnerable to pass-the-hash."],
+["NTP","Network Time Protocol","Port 123; accurate time is essential for logs and Kerberos."],
+["OAuth","Open Authorization","Delegated authorization, not authentication. OIDC adds identity."],
+["OCSP","Online Certificate Status Protocol","Real-time revocation checking; stapling moves the check to the server."],
+["OIDC","OpenID Connect","An identity layer on top of OAuth 2.0."],
+["OSINT","Open-Source Intelligence","Intelligence from publicly available sources."],
+["OT","Operational Technology","Systems controlling physical processes; contrast with IT."],
+["PaaS","Platform as a Service","Customer manages only the application and its data."],
+["PAM","Privileged Access Management","Vaulting, just-in-time elevation and ephemeral credentials for admin accounts."],
+["PAP","Password Authentication Protocol","Sends credentials in the clear; obsolete."],
+["PBKDF2","Password-Based Key Derivation Function 2","Key-stretching algorithm making brute force expensive."],
+["PCAP","Packet Capture"],
+["PCI DSS","Payment Card Industry Data Security Standard","Contractual, not statutory — non-compliance risks fines and loss of processing."],
+["PEAP","Protected EAP","Wraps EAP inside a TLS tunnel."],
+["PFS","Perfect Forward Secrecy","Compromise of a long-term key does not expose past sessions."],
+["PGP","Pretty Good Privacy","Email and file encryption; GPG is the open implementation."],
+["PHI","Protected Health Information","Regulated under HIPAA in the US."],
+["PII","Personally Identifiable Information"],
+["PKI","Public Key Infrastructure","CAs, certificates, CRLs and the trust chain binding keys to identities."],
+["PSK","Pre-Shared Key"],
+["RA","Registration Authority","Verifies identity on behalf of a CA before a certificate is issued."],
+["RADIUS","Remote Authentication Dial-In User Service","AAA for network access; encrypts only the password. Compare TACACS+."],
+["RAID","Redundant Array of Independent Disks","Availability, not backup — it does not protect against deletion."],
+["RAT","Remote Access Trojan"],
+["RBAC","Role-Based / Rule-Based Access Control","Two different models share this abbreviation — read the context."],
+["RDP","Remote Desktop Protocol","Port 3389; a frequent target when exposed to the internet."],
+["RFID","Radio Frequency Identification","Badge cloning is the classic attack."],
+["RPO","Recovery Point Objective","Maximum tolerable data loss, expressed in time — drives backup frequency."],
+["RTO","Recovery Time Objective","Maximum tolerable downtime — drives recovery site choice."],
+["RTOS","Real-Time Operating System","Deterministic timing; common in embedded and ICS."],
+["S/MIME","Secure/Multipurpose Internet Mail Extensions","Certificate-based email signing and encryption."],
+["SaaS","Software as a Service","Customer manages only data and user access."],
+["SAE","Simultaneous Authentication of Equals","WPA3's replacement for the WPA2 pre-shared key handshake."],
+["SAML","Security Assertion Markup Language","XML assertions for browser-based federated SSO."],
+["SAN","Subject Alternative Name / Storage Area Network","In certificates, the field listing additional valid hostnames."],
+["SASE","Secure Access Service Edge","Converged network and security delivered from the cloud edge."],
+["SCADA","Supervisory Control and Data Acquisition"],
+["SCAP","Security Content Automation Protocol","Standardizes how tools express and check configuration and vulnerability data."],
+["SD-WAN","Software-Defined Wide Area Network"],
+["SDLC","Software Development Lifecycle"],
+["SDN","Software-Defined Networking","Separates the control plane from the data plane."],
+["SED","Self-Encrypting Drive"],
+["SFTP","SSH File Transfer Protocol","Runs over SSH on port 22. Distinct from FTPS."],
+["SHA","Secure Hash Algorithm","SHA-256 and above are current; SHA-1 is deprecated."],
+["SIEM","Security Information and Event Management","Aggregates and correlates logs across the estate."],
+["SLA","Service-Level Agreement","Performance commitments plus the remedy for missing them."],
+["SLE","Single Loss Expectancy","AV × EF — the loss from one occurrence."],
+["SMTP","Simple Mail Transfer Protocol","Port 25; 587 for submission, 465 for implicit TLS."],
+["SNMP","Simple Network Management Protocol","v3 adds authentication and encryption; v1 and v2c do not."],
+["SOAR","Security Orchestration, Automation, and Response","Automates and orchestrates repeatable response actions."],
+["SOC","Security Operations Center","Also System on Chip — read the context."],
+["SOW","Statement of Work","Specific deliverables and timeline, usually under an MSA."],
+["SPF","Sender Policy Framework","DNS record listing servers authorized to send for the domain."],
+["SQLi","SQL Injection"],
+["SSH","Secure Shell","Port 22; underlies SFTP and SCP."],
+["SSO","Single Sign-On","One authentication grants access to many services."],
+["STIX","Structured Threat Information eXpression","Standard format for threat intelligence; TAXII is the transport."],
+["TACACS+","Terminal Access Controller Access-Control System Plus","Separates the three A's and encrypts the whole payload. Compare RADIUS."],
+["TAXII","Trusted Automated eXchange of Indicator Information","The transport mechanism for STIX data."],
+["TGT","Ticket Granting Ticket","Issued by the Kerberos KDC after initial authentication."],
+["TKIP","Temporal Key Integrity Protocol","WPA's stopgap; deprecated in favour of CCMP."],
+["TLS","Transport Layer Security","Successor to SSL; 1.2 and 1.3 are current."],
+["TOCTOU","Time-of-Check to Time-of-Use","The race condition class exploiting the gap between validation and use."],
+["TOTP","Time-based One-Time Password","Interval-based codes, typically 30 seconds. Compare HOTP."],
+["TPM","Trusted Platform Module","On-board chip storing one device's keys and enabling boot attestation."],
+["TTP","Tactics, Techniques, and Procedures","How an adversary operates — more durable than indicators."],
+["UEBA","User and Entity Behavior Analytics","Baselines normal behaviour and flags deviation."],
+["UEFI","Unified Extensible Firmware Interface","Successor to BIOS; enables Secure Boot."],
+["UEM","Unified Endpoint Management"],
+["UPS","Uninterruptible Power Supply","Bridges short outages; a generator covers long ones."],
+["UTM","Unified Threat Management","Multiple security functions in one appliance."],
+["VDI","Virtual Desktop Infrastructure","Desktops hosted centrally; data never lands on the endpoint."],
+["VLAN","Virtual Local Area Network","Logical segmentation over shared physical hardware."],
+["VPC","Virtual Private Cloud"],
+["VPN","Virtual Private Network"],
+["WAF","Web Application Firewall","Inspects HTTP/HTTPS for application-layer attacks."],
+["WEP","Wired Equivalent Privacy","Broken; replaced by WPA, WPA2 and WPA3."],
+["WPA3","Wi-Fi Protected Access 3","Current wireless standard; uses SAE instead of a pre-shared handshake."],
+["WPS","Wi-Fi Protected Setup","PIN is brute-forceable — disable it."],
+["XDR","Extended Detection and Response","Correlates detection across endpoint, network and cloud."],
+["XSS","Cross-Site Scripting","Injected script runs in another user's browser. Compare CSRF."],
+["ZTA","Zero Trust Architecture","No implicit trust from network location; verify every request."]
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const KEY = "secplus-boundary-drill-v2";
+const WINDOW = 10;   // band on the last N FIRST exposures
+const TRUST  = 10;   // attempts before a band is treated as real
+let stats = load();
+let domFilter = "all";
+let current = null;
+let answered = false;
+let repairBoundary = null;
+let repairDone = 0;
+let repairCleared = false;
+const REPAIR_N = 3;
+let sessionSeen = 0, sessionRight = 0;
+let lastId = null;
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){ /* storage unavailable — run in-memory */ }
+  return {};
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(stats)); }
+  catch(e){ /* ignore quota / privacy-mode failures */ }
+}
+/* Per-boundary record:
+     seen/right   — lifetime, all attempts (kept for the record only)
+     fseen/fright — FIRST exposures only; the honest signal
+     win          — rolling last WINDOW first-exposure results (1/0)
+     rseen/rright — repeat attempts; the gap against first-try is the
+                    memorization alarm the diagnosis calls for
+   stats.__items maps itemId -> times seen, so we know which attempt this is. */
+function statFor(b){
+  if(!stats[b]) stats[b] = {seen:0,right:0,fseen:0,fright:0,rseen:0,rright:0,win:[]};
+  const s = stats[b];
+  if(!s.win) s.win = [];                      // tolerate older saved shapes
+  return s;
+}
+function itemViews(){
+  if(!stats.__items) stats.__items = {};
+  return stats.__items;
+}
+/* Band on the rolling window of first exposures, not lifetime accuracy —
+   a cumulative average after 40 trials cannot detect a decline. */
+function bandAcc(st){
+  if(!st.win.length) return null;
+  return st.win.reduce((a,b) => a+b, 0) / st.win.length;
+}
+function isProvisional(st){ return st.fseen < TRUST; }
+
+/* ============================================================
+   SELECTION — weight toward weak and unseen boundaries
+   ============================================================ */
+function pool(){
+  return ITEMS.filter(it => domFilter === "all" || B[it.b].domain === domFilter);
+}
+function boundaryWeight(b){
+  const st = statFor(b);
+  if(st.fseen === 0) return 3;                // unseen: surface it early
+  if(isProvisional(st)) return 2.5;           // fewer than TRUST first exposures
+  const acc = bandAcc(st);
+  if(acc === null)   return 2.5;
+  if(acc < 0.6)      return 4;                // not held
+  if(acc < 0.8)      return 2.5;              // shaky
+  return 1;                                   // holding — keep ticking over
+}
+function pick(){
+  const p = pool();
+  if(!p.length) return null;
+
+  const views = itemViews();
+
+  if(repairBoundary){
+    let rep = p.filter(it => it.b === repairBoundary && idOf(it) !== lastId);
+    // repair on scenarios he has NOT seen — re-serving a known item
+    // tests recall of that item, not the boundary
+    const fresh = rep.filter(it => !views[idOf(it)]);
+    if(fresh.length) rep = fresh;
+    if(rep.length) return rep[Math.floor(Math.random()*rep.length)];
+  }
+
+  const weighted = [];
+  p.forEach(it => {
+    if(idOf(it) === lastId) return;
+    const w = boundaryWeight(it.b);
+    const v = views[idOf(it)] || 0;
+    // strongly favour first exposures: a re-seen scenario measures recall
+    // of that scenario, not the category judgement underneath it
+    const freshness = v === 0 ? 3 : 1 / (1 + v);
+    for(let i=0;i<Math.max(1, Math.round(w * freshness * 2));i++) weighted.push(it);
+  });
+  const from = weighted.length ? weighted : p;
+  return from[Math.floor(Math.random()*from.length)];
+}
+function idOf(it){ return it.b + "|" + it.s.slice(0,40); }
+function shuffle(a){
+  const r = a.slice();
+  for(let i = r.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [r[i], r[j]] = [r[j], r[i]];
+  }
+  return r;
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+const $ = id => document.getElementById(id);
+
+function render(){
+  if(repairCleared){ repairBoundary = null; repairDone = 0; repairCleared = false; }
+  current = pick();
+  answered = false;
+  if(!current){ $("scenario").textContent = "No scenarios for this filter."; $("opts").innerHTML=""; return; }
+
+  const bd = B[current.b];
+  $("dtag").textContent = "Domain " + bd.domain;
+  $("bname").textContent = bd.name;
+  $("scenario").textContent = current.s;
+  $("prompt").textContent = bd.prompt;
+  $("counter").textContent = sessionSeen ? sessionRight + " / " + sessionSeen + " this session" : "";
+
+  const opts = $("opts");
+  opts.innerHTML = "";
+  /* Shuffle: with items seen many times, a fixed order lets you encode
+     button position instead of reading the scenario. */
+  shuffle(Object.keys(bd.defs)).forEach(o => {
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "opt"; btn.textContent = o;
+    btn.addEventListener("click", () => answer(o, btn));
+    opts.appendChild(btn);
+  });
+
+  $("fb").classList.remove("on");
+  renderRepair();
+  renderStats();
+}
+
+function renderRepair(){
+  const el = $("repair");
+  if(!repairBoundary){ el.classList.remove("on"); return; }
+  el.classList.add("on");
+  $("repair-name").textContent = B[repairBoundary].name +
+    (repairCleared ? " · cleared" : "");
+  const pips = $("repair-pips");
+  pips.innerHTML = "";
+  for(let i=0;i<REPAIR_N;i++){
+    const p = document.createElement("span");
+    p.className = "pip" + (i < repairDone ? " done" : "");
+    pips.appendChild(p);
+  }
+}
+
+function answer(choice, btn){
+  if(answered) return;
+  answered = true;
+  lastId = idOf(current);
+
+  const bd = B[current.b];
+  const ok = choice === current.a;
+  const st = statFor(current.b);
+  const views = itemViews();
+  const id = idOf(current);
+  const firstExposure = !views[id];
+  views[id] = (views[id] || 0) + 1;
+
+  st.seen++; if(ok) st.right++;
+  if(firstExposure){
+    st.fseen++; if(ok) st.fright++;
+    st.win.push(ok ? 1 : 0);
+    if(st.win.length > WINDOW) st.win.shift();
+  } else {
+    st.rseen++; if(ok) st.rright++;
+  }
+  sessionSeen++; if(ok) sessionRight++;
+  save();
+
+  [...$("opts").children].forEach(b => {
+    b.disabled = true;
+    if(b.textContent === current.a) b.classList.add("correct");
+    else if(b === btn) b.classList.add("wrong");
+    else b.classList.add("muted-out");
+  });
+
+  const v = $("verdict");
+  v.className = "verdict " + (ok ? "ok" : "no");
+  v.innerHTML = '<span class="mark">' + (ok ? "✓" : "✕") + "</span>" +
+                (ok ? "Correct" : "Not quite");
+
+  $("rule").innerHTML = bd.rule;
+
+  const c = $("contrast");
+  c.innerHTML = "";
+  if(!ok){
+    const picked = document.createElement("div");
+    picked.className = "picked";
+    picked.innerHTML = "<b>You chose " + choice + "</b> — " + bd.defs[choice] + ".";
+    c.appendChild(picked);
+  }
+  const ans = document.createElement("div");
+  ans.className = "answer";
+  ans.innerHTML = "<b>" + current.a + "</b> — " + bd.defs[current.a] + ". " + current.w;
+  c.appendChild(ans);
+
+  /* --- the three-novel-scenarios rule --- */
+  if(!ok){
+    repairBoundary = current.b;
+    repairDone = 0;
+    repairCleared = false;
+  } else if(repairBoundary === current.b){
+    repairDone++;
+    // hold the banner at 3/3 through the feedback step so the last pip is
+    // actually seen; render() clears it when the learner moves on.
+    if(repairDone >= REPAIR_N) repairCleared = true;
+  }
+
+  renderRepair();
+  renderStats();
+  $("fb").classList.add("on");
+  $("next").focus();
+}
+
+function bandColor(acc){
+  if(acc < 0.6) return "var(--critical)";
+  if(acc < 0.8) return "var(--warning)";
+  return "var(--good)";
+}
+function bandName(acc){
+  if(acc < 0.6) return "not held";
+  if(acc < 0.8) return "shaky";
+  return "holding";
+}
+
+/* The memorization alarm: first-try accuracy against repeat accuracy.
+   A wide gap means the scenarios are being recalled rather than the
+   boundary being judged — the exact failure this tool exists to prevent. */
+function renderAlarm(scope){
+  const el = $("alarm");
+  let f = 0, fr = 0, r = 0, rr = 0;
+  scope.forEach(({st}) => { f += st.fseen; fr += st.fright; r += st.rseen; rr += st.rright; });
+
+  if(f < 20 || r < 15){ el.className = "alarm"; el.innerHTML = ""; return; }
+
+  const first = fr / f, rep = rr / r, gap = rep - first;
+  const bad = gap >= 0.20;
+  el.className = "alarm on " + (bad ? "warn" : "ok");
+  el.innerHTML =
+    '<span class="mark">' + (bad ? "!" : "✓") + "</span><span>" +
+    "<b>First-try " + Math.round(first*100) + "% · repeat " + Math.round(rep*100) + "%</b> — " +
+    (bad
+      ? "a gap this wide means you are recalling these scenarios rather than judging the boundary. " +
+        "The repeat number is not your exam score. Trust the first-try figure."
+      : "the two are close, so the first-try number is measuring the boundary rather than your memory " +
+        "of these particular scenarios.") +
+    "</span>";
+}
+
+function renderStats(){
+  const rows = $("rows");
+  rows.innerHTML = "";
+  const scope = Object.keys(B)
+    .filter(b => domFilter === "all" || B[b].domain === domFilter)
+    .map(b => ({b, st: statFor(b)}));
+
+  renderAlarm(scope);
+
+  scope
+    .sort((x,y) => {
+      const ax = bandAcc(x.st); const ay = bandAcc(y.st);
+      return (ax === null ? 2 : ax) - (ay === null ? 2 : ay);
+    })
+    .forEach(({b, st}) => {
+      const row = document.createElement("div");
+      row.className = "row";
+
+      const nm = document.createElement("div");
+      nm.className = "nm";
+      nm.innerHTML = B[b].name + "<small>D" + B[b].domain.charAt(0) + "</small>";
+
+      const track = document.createElement("div");
+      track.className = "track";
+      const val = document.createElement("div");
+      val.className = "val";
+
+      const acc = bandAcc(st);
+      if(acc === null){
+        val.innerHTML = '<span class="unseen">not seen</span>';
+      } else {
+        const fill = document.createElement("div");
+        fill.className = "fill";
+        fill.style.width = Math.max(3, Math.round(acc*100)) + "%";
+        fill.style.background = bandColor(acc);
+        if(isProvisional(st)) fill.style.opacity = ".45";
+        track.appendChild(fill);
+        val.innerHTML = '<span class="band" style="background:' + bandColor(acc) +
+                        (isProvisional(st) ? ";opacity:.45" : "") + '"></span>' +
+                        Math.round(acc*100) + "%";
+        if(isProvisional(st)){
+          nm.innerHTML += ' <span class="prov">provisional · ' + st.fseen + "/" + TRUST + "</span>";
+        }
+        val.title = st.fright + " of " + st.fseen + " first exposures — " + bandName(acc) +
+                    (st.rseen ? " · repeats " + st.rright + "/" + st.rseen : "");
+      }
+      row.appendChild(nm); row.appendChild(track); row.appendChild(val);
+      rows.appendChild(row);
+    });
+}
+
+/* ============================================================
+   WIRING
+   ============================================================ */
+$("next").addEventListener("click", render);
+
+document.querySelectorAll(".seg button[data-dom]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    domFilter = btn.dataset.dom;
+    document.querySelectorAll(".seg button[data-dom]").forEach(b =>
+      b.setAttribute("aria-pressed", String(b === btn)));
+    if(repairBoundary && domFilter !== "all" && B[repairBoundary].domain !== domFilter){
+      repairBoundary = null; repairDone = 0; repairCleared = false;
+    }
+    lastId = null;
+    render();
+  });
+});
+
+$("reset").addEventListener("click", () => {
+  stats = {}; save();
+  sessionSeen = 0; sessionRight = 0;
+  repairBoundary = null; repairDone = 0; repairCleared = false; lastId = null;
+  render();
+});
+
+document.addEventListener("keydown", e => {
+  if(currentView !== "drill") return;
+  if(e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+  if(e.key === "Enter" && answered){ e.preventDefault(); render(); return; }
+  if(!answered && /^[1-9]$/.test(e.key)){
+    const i = parseInt(e.key,10) - 1;
+    const btns = $("opts").children;
+    if(btns[i]) btns[i].click();
+  }
+});
+
+/* ============================================================
+   GLOSSARY VIEW
+   ============================================================ */
+let currentView = "drill";
+
+const sorted = GLOSSARY.slice().sort((a,b) =>
+  a[0].localeCompare(b[0], "en", {sensitivity:"base", numeric:true}));
+
+function renderGlossary(q){
+  const list = $("glist");
+  const needle = (q||"").trim().toLowerCase();
+  const hits = needle
+    ? sorted.filter(e => (e[0]+" "+e[1]+" "+(e[2]||"")).toLowerCase().includes(needle))
+    : sorted;
+
+  $("gcount").textContent = hits.length + " of " + sorted.length;
+  list.innerHTML = "";
+
+  if(!hits.length){
+    const e = document.createElement("div");
+    e.className = "gempty";
+    e.textContent = "Nothing matches “" + q + "”.";
+    list.appendChild(e);
+    return;
+  }
+
+  let letter = "";
+  const frag = document.createDocumentFragment();
+  hits.forEach(([ab, full, gloss]) => {
+    const L = ab.charAt(0).toUpperCase();
+    if(L !== letter){
+      letter = L;
+      const h = document.createElement("div");
+      h.className = "gletter";
+      h.textContent = L;
+      frag.appendChild(h);
+    }
+    const row = document.createElement("div");
+    row.className = "gentry";
+
+    const a = document.createElement("div");
+    a.className = "gab";
+    a.textContent = ab;
+
+    const t = document.createElement("div");
+    t.className = "gtx";
+    const b = document.createElement("b");
+    b.textContent = full;
+    t.appendChild(b);
+    if(gloss){
+      const s = document.createElement("span");
+      s.textContent = " — " + gloss;
+      t.appendChild(s);
+    }
+    row.appendChild(a); row.appendChild(t);
+    frag.appendChild(row);
+  });
+  list.appendChild(frag);
+}
+
+$("gsearch").addEventListener("input", e => renderGlossary(e.target.value));
+
+document.querySelectorAll('.seg button[data-view]').forEach(btn => {
+  btn.addEventListener("click", () => {
+    currentView = btn.dataset.view;
+    document.querySelectorAll('.seg button[data-view]').forEach(b =>
+      b.setAttribute("aria-pressed", String(b === btn)));
+    // null-safe: the public build ships without the Plan view
+    ["drill","glossary","plan"].forEach(v => {
+      const el = $("view-" + v);
+      if(el) el.hidden = currentView !== v;
+    });
+    if(currentView === "glossary") $("gsearch").focus();
+    window.scrollTo(0, 0);
+  });
+});
+
+renderGlossary("");
+render();
+</script>
+</body>
+</html>
