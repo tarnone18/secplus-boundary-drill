@@ -75,6 +75,12 @@ and nothing is allowed to go more than 10 days untouched.
 
 Options are shuffled on every render, so you can't encode button positions.
 
+**It warns you when you're going too fast.** A scenario is 2–3 sentences and the feedback is a discriminating
+rule plus an explanation; reading both and genuinely deciding takes 25–30 seconds. Answer much faster than
+that and you're pattern-matching without absorbing the rule — which, on a finite pool, builds recognition of
+*these scenarios* rather than the boundary underneath them. If your rolling average drops below 15s the tool
+says so. It never blocks; it just tells you what a 10-second answer can possibly have taught you.
+
 ## Optional: set your exam date
 
 Near the top of the script block:

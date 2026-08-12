@@ -77,6 +77,14 @@
   .taper .sweepbar{height:7px;background:var(--rule);border-radius:4px;overflow:hidden}
   .taper .sweepfill{height:100%;background:var(--critical);border-radius:4px;min-width:3px}
 
+  .pace{display:none;gap:10px;align-items:flex-start;border-radius:10px;padding:11px 14px;
+    font-size:12.5px;line-height:1.5;background:var(--warning);color:#0b0b0b;
+    border:1px solid rgba(11,11,11,.25)}
+  .pace.on{display:flex}
+  .pace b{font-weight:700}
+  .pace .mark{width:17px;height:17px;flex:none;border-radius:50%;display:grid;place-items:center;
+    font-size:11px;font-weight:800;background:#0b0b0b;color:var(--warning);line-height:1;margin-top:1px}
+
   /* ---------- controls ---------- */
   .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .seg{display:inline-flex;border:1px solid var(--hair);border-radius:9px;overflow:hidden}
@@ -308,6 +316,7 @@
   </div>
 
   <div class="taper" id="taper"></div>
+  <div class="pace" id="pace"></div>
 
   <div class="repair" id="repair">
     <span>Boundary repair — <b id="repair-name"></b></span>
@@ -1663,6 +1672,18 @@ const TRUST  = 10;   // cold attempts before a band is treated as real
    separately: cold-vs-repeat is the memorization alarm. */
 const COLD_DAYS = 14;
 
+/* ---- pace guardrail -------------------------------------------------
+   A scenario is 2-3 sentences and the feedback is a discriminating rule
+   plus an explanation. Reading both and actually deciding takes ~25-30s.
+   Much under that and you are pattern-matching without absorbing the rule,
+   which builds recognition of these scenarios rather than the boundary
+   underneath them — the exact failure this tool exists to prevent.
+   Advisory only: it never blocks.                                      */
+const PACE_MIN   = 15;   // seconds/scenario below which we warn
+const PACE_AFTER = 10;   // only judge after this many answers this session
+let paceTimes = [];      // seconds per answer, this session
+let shownAt   = null;    // when the current scenario was rendered
+
 /* ---- exam date ------------------------------------------------------
    Booked for Friday 25 September 2026. Everything below keys off this:
    the countdown, the recency weighting, and the final-week sweep that
@@ -1849,8 +1870,10 @@ function render(){
   });
 
   $("fb").classList.remove("on");
+  shownAt = Date.now();
   renderCountdown();
   renderRepair();
+  renderPace();
   renderStats();
 }
 
@@ -1893,6 +1916,23 @@ function renderCountdown(){
     '<span class="sweepbar"><span class="sweepfill" style="width:' + Math.max(3,pct) + '%"></span></span>';
 }
 
+/* Advisory pace warning. Never blocks — it just tells you the truth about
+   what a 10-second answer can possibly have taught you. */
+function renderPace(){
+  const el = $("pace");
+  if(paceTimes.length < PACE_AFTER){ el.classList.remove("on"); el.innerHTML = ""; return; }
+  const avg = paceTimes.reduce((a,b) => a + b, 0) / paceTimes.length;
+  if(avg >= PACE_MIN){ el.classList.remove("on"); el.innerHTML = ""; return; }
+
+  el.classList.add("on");
+  el.innerHTML =
+    '<span class="mark">!</span><span><b>' + avg.toFixed(0) + "s per scenario.</b> " +
+    "That is fast enough to read the situation and click, but not to read the rule underneath it — " +
+    "and the rule is the part that transfers. Four quick passes through the pool builds recognition of " +
+    "<i>these scenarios</i>, not the boundary. Aim for 25–30s: read the rule every time, including when " +
+    "you were right.</span>";
+}
+
 function renderRepair(){
   const el = $("repair");
   if(!repairBoundary){ el.classList.remove("on"); return; }
@@ -1916,6 +1956,11 @@ function answer(choice, btn){
   const bd = B[current.b];
   const ok = choice === current.a;
   const st = statFor(current.b);
+  if(shownAt){
+    paceTimes.push((Date.now() - shownAt) / 1000);
+    if(paceTimes.length > 20) paceTimes.shift();   // rolling, so slowing down clears it
+  }
+
   const views = itemViews();
   const id = idOf(current);
   const cold = isCold(id);
@@ -1975,6 +2020,7 @@ function answer(choice, btn){
 
   renderCountdown();
   renderRepair();
+  renderPace();
   renderStats();
   $("fb").classList.add("on");
   $("next").focus();
