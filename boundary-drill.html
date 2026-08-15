@@ -201,8 +201,31 @@
   .foot code{background:var(--chip);border-radius:4px;padding:1px 5px;font-size:11.5px}
 
   /* ---------- views ---------- */
-  #view-drill,#view-glossary{display:flex;flex-direction:column;gap:20px}
+  #view-drill,#view-glossary,#view-cards{display:flex;flex-direction:column;gap:20px}
   [hidden]{display:none !important}
+
+  /* ---------- cards ---------- */
+  .cardface{min-height:250px}
+  .cardterm{
+    font-size:40px;font-weight:700;letter-spacing:-.02em;margin:14px 0 4px;
+    text-align:center;overflow-wrap:anywhere;line-height:1.15;
+  }
+  .cardback{display:none;flex-direction:column;gap:7px;border-top:1px solid var(--rule);padding-top:15px}
+  .cardback.on{display:flex}
+  .cardfull{font-size:19px;font-weight:600;margin:0;line-height:1.35;text-wrap:balance}
+  .cardgloss{
+    font-family:Georgia,"Iowan Old Style","Palatino Linotype",Palatino,serif;
+    font-size:16px;line-height:1.6;margin:0;color:var(--ink-2);
+  }
+  .cardscore{display:none;grid-template-columns:1fr 1fr;gap:9px}
+  .cardscore.on{display:grid}
+  .scoremiss{border-color:var(--critical)}
+  .scoremiss:hover:not(:disabled){background:var(--critical-wash);border-color:var(--critical)}
+  .scoreknew{border-color:var(--good)}
+  .scoreknew:hover:not(:disabled){background:var(--good-wash);border-color:var(--good)}
+  .opt.scoremiss,.opt.scoreknew{text-align:center;font-weight:600}
+  .boxrow .nm b{font-variant-numeric:tabular-nums}
+  .cardempty{text-align:center;color:var(--muted);font-size:14px;padding:28px 10px;line-height:1.6}
 
   /* ---------- plan ---------- */
   .panel{background:var(--surface);border:1px solid var(--hair);border-radius:14px;
@@ -298,6 +321,7 @@
     <span class="spacer"></span>
     <div class="seg" role="group" aria-label="View">
       <button type="button" data-view="drill" aria-pressed="true">Drill</button>
+      <button type="button" data-view="cards" aria-pressed="false">Cards</button>
       <button type="button" data-view="glossary" aria-pressed="false">Glossary</button>
     </div>
   </div>
@@ -362,6 +386,57 @@
   <p class="foot">
     Miss a scenario and the drill serves <b>three more on that same boundary</b> before moving on — the
     three-novel-scenarios rule, automated. Progress saves in this browser only.
+  </p>
+</div>
+
+<div id="view-cards" hidden>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Card pool">
+      <button type="button" data-cards="due" aria-pressed="true">Due</button>
+      <button type="button" data-cards="weak" aria-pressed="false">Weak only</button>
+      <button type="button" data-cards="all" aria-pressed="false">All</button>
+    </div>
+    <span class="gcount" id="cardcount"></span>
+    <button type="button" class="linkbtn" id="cardreset">Reset cards</button>
+  </div>
+
+  <div class="card cardface">
+    <div class="card-head">
+      <span class="eyebrow" id="card-state">Recall the expansion</span>
+      <span class="counter" id="card-counter"></span>
+    </div>
+
+    <p class="cardterm" id="cardterm"></p>
+
+    <div class="cardback" id="cardback">
+      <p class="cardfull" id="cardfull"></p>
+      <p class="cardgloss" id="cardgloss"></p>
+    </div>
+
+    <button type="button" class="next" id="cardreveal">Reveal</button>
+    <div class="cardscore" id="cardscore">
+      <button type="button" class="opt scoremiss" id="cardmiss">Missed it</button>
+      <button type="button" class="opt scoreknew" id="cardknew">Knew it</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <h2>Card progress</h2>
+    <p class="lede">Five boxes. Knew it moves a card up, missed sends it back to box 1. Higher boxes come
+      round less often — box 5 is once a fortnight.</p>
+    <div class="rows" id="boxrows"></div>
+    <p class="foot" style="margin-top:14px">
+      <b>Score yourself honestly.</b> If you had to think for more than about three seconds, that's a miss.
+      Self-rated recall is where people flatter themselves, and a card you half-knew is a card you won't
+      have under exam pressure.
+    </p>
+  </div>
+
+  <p class="foot">
+    Acronyms are the one place definition cards are the right tool — there's no judgement involved, and not
+    knowing what a term expands to means the question is lost before your reasoning starts. Ten minutes a
+    day. It is a prerequisite, not where your points are.
   </p>
 </div>
 
@@ -2138,14 +2213,191 @@ $("reset").addEventListener("click", () => {
 });
 
 document.addEventListener("keydown", e => {
-  if(currentView !== "drill") return;
   if(e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+
+  if(currentView === "cards"){
+    // space or enter reveals; then 1 = missed, 2 = knew
+    if((e.key === " " || e.key === "Enter") && !cardRevealed){ e.preventDefault(); revealCard(); return; }
+    if(cardRevealed){
+      if(e.key === "1"){ e.preventDefault(); scoreCard(false); }
+      if(e.key === "2"){ e.preventDefault(); scoreCard(true); }
+    }
+    return;
+  }
+
+  if(currentView !== "drill") return;
   if(e.key === "Enter" && answered){ e.preventDefault(); render(); return; }
   if(!answered && /^[1-9]$/.test(e.key)){
     const i = parseInt(e.key,10) - 1;
     const btns = $("opts").children;
     if(btns[i]) btns[i].click();
   }
+});
+
+/* ============================================================
+   ACRONYM CARDS — Leitner, five boxes, free recall
+
+   Acronyms are the one part of this exam that is genuinely a recall task
+   rather than a judgement, so cards are the right instrument here and only
+   here. Direction is deliberately acronym -> meaning: on the exam you read
+   "TACACS+" in a stem and need to know what it does. You are essentially
+   never asked to go the other way.
+   ============================================================ */
+const BOX_DAYS = [0, 0, 1, 3, 7, 14];   // index = box number, 1..5
+let cardPool = "due";
+let currentCard = null;
+let cardRevealed = false;
+let cardSessionSeen = 0, cardSessionKnew = 0;
+
+function cardStore(){
+  if(!stats.__cards) stats.__cards = {};
+  return stats.__cards;
+}
+function cardFor(ab){
+  const s = cardStore();
+  if(!s[ab]) s[ab] = {box:1, last:null, seen:0, right:0};
+  return s[ab];
+}
+function cardDue(ab){
+  const c = cardFor(ab);
+  if(!c.last) return true;                       // never seen
+  const age = daysSince(c.last);
+  return age === null || age >= BOX_DAYS[c.box];
+}
+function cardCandidates(){
+  const all = GLOSSARY.map(g => g[0]);
+  if(cardPool === "all")  return all;
+  if(cardPool === "weak") return all.filter(ab => cardFor(ab).box <= 2 && cardFor(ab).seen > 0);
+  return all.filter(cardDue);                    // "due"
+}
+
+function pickCard(){
+  const pool = cardCandidates();
+  if(!pool.length) return null;
+  // unseen first, then lowest box, then longest since last seen
+  const scored = pool.map(ab => {
+    const c = cardFor(ab);
+    const age = c.last ? (daysSince(c.last) || 0) : 999;
+    return {ab, key: (c.seen === 0 ? -1000 : 0) + c.box * 10 - Math.min(age, 30) / 10};
+  }).sort((a, b) => a.key - b.key);
+  // sample from the neediest third so it isn't the same order every session
+  const top = scored.slice(0, Math.max(1, Math.ceil(scored.length / 3)));
+  return top[Math.floor(Math.random() * top.length)].ab;
+}
+
+function renderCard(){
+  const $ = id => document.getElementById(id);
+  const face = document.querySelector(".cardface");
+  currentCard = pickCard();
+  cardRevealed = false;
+
+  $("cardback").classList.remove("on");
+  $("cardscore").classList.remove("on");
+  $("cardreveal").style.display = "";
+
+  const store = cardStore();
+  const total = GLOSSARY.length;
+  const mastered = GLOSSARY.filter(g => (store[g[0]] || {box:1}).box === 5).length;
+  const due = GLOSSARY.filter(g => cardDue(g[0])).length;
+  $("cardcount").textContent = due + " due · " + mastered + "/" + total + " in box 5";
+  $("card-counter").textContent = cardSessionSeen ? cardSessionKnew + " / " + cardSessionSeen + " this session" : "";
+
+  if(!currentCard){
+    $("cardterm").textContent = "";
+    $("cardreveal").style.display = "none";
+    $("card-state").textContent = "";
+    let empty = face.querySelector(".cardempty");
+    if(!empty){ empty = document.createElement("div"); empty.className = "cardempty"; face.appendChild(empty); }
+    empty.innerHTML = cardPool === "due"
+      ? "Nothing due right now — the boxes are doing their job.<br>Switch to <b>All</b> if you want to keep going anyway."
+      : "No cards in this pool yet. Answer some in <b>Due</b> first.";
+    return;
+  }
+  const empty = face.querySelector(".cardempty");
+  if(empty) empty.remove();
+
+  const entry = GLOSSARY.find(g => g[0] === currentCard);
+  const c = cardFor(currentCard);
+  $("card-state").textContent = "Recall the expansion · box " + c.box + " of 5";
+  $("cardterm").textContent = currentCard;
+  $("cardfull").textContent = entry[1];
+  $("cardgloss").textContent = entry[2] || "";
+  renderBoxes();
+}
+
+function revealCard(){
+  if(!currentCard || cardRevealed) return;
+  cardRevealed = true;
+  document.getElementById("cardback").classList.add("on");
+  document.getElementById("cardreveal").style.display = "none";
+  document.getElementById("cardscore").classList.add("on");
+}
+
+function scoreCard(knew){
+  if(!currentCard || !cardRevealed) return;
+  const c = cardFor(currentCard);
+  c.seen++; if(knew) c.right++;
+  c.box = knew ? Math.min(5, c.box + 1) : 1;
+  c.last = todayISO();
+  cardSessionSeen++; if(knew) cardSessionKnew++;
+  save();
+  renderCard();
+}
+
+function renderBoxes(){
+  const rows = document.getElementById("boxrows");
+  rows.innerHTML = "";
+  const store = cardStore();
+  const counts = [0,0,0,0,0,0];
+  let unseen = 0;
+  GLOSSARY.forEach(g => {
+    const c = store[g[0]];
+    if(!c || !c.seen) unseen++; else counts[c.box]++;
+  });
+  const total = GLOSSARY.length;
+  const band = b => b >= 5 ? "var(--good)" : b >= 3 ? "var(--warning)" : "var(--critical)";
+
+  const add = (label, n, colour, note) => {
+    const row = document.createElement("div");
+    row.className = "row boxrow";
+    const nm = document.createElement("div");
+    nm.className = "nm";
+    nm.innerHTML = label + (note ? '<small>' + note + '</small>' : "");
+    const track = document.createElement("div"); track.className = "track";
+    if(n){
+      const fill = document.createElement("div"); fill.className = "fill";
+      fill.style.width = Math.max(3, Math.round(n / total * 100)) + "%";
+      fill.style.background = colour;
+      track.appendChild(fill);
+    }
+    const val = document.createElement("div"); val.className = "val";
+    val.innerHTML = '<span class="band" style="background:' + colour + '"></span>' + n;
+    row.appendChild(nm); row.appendChild(track); row.appendChild(val);
+    rows.appendChild(row);
+  };
+
+  add("Not yet seen", unseen, "var(--muted)", "");
+  for(let b = 1; b <= 5; b++){
+    add("Box " + b, counts[b], band(b),
+        b === 1 ? "same session" : BOX_DAYS[b] === 1 ? "1 day" : BOX_DAYS[b] + " days");
+  }
+}
+
+document.getElementById("cardreveal").addEventListener("click", revealCard);
+document.getElementById("cardknew").addEventListener("click", () => scoreCard(true));
+document.getElementById("cardmiss").addEventListener("click", () => scoreCard(false));
+document.getElementById("cardreset").addEventListener("click", () => {
+  stats.__cards = {}; save();
+  cardSessionSeen = 0; cardSessionKnew = 0;
+  renderCard();
+});
+document.querySelectorAll('.seg button[data-cards]').forEach(btn => {
+  btn.addEventListener("click", () => {
+    cardPool = btn.dataset.cards;
+    document.querySelectorAll('.seg button[data-cards]').forEach(b =>
+      b.setAttribute("aria-pressed", String(b === btn)));
+    renderCard();
+  });
 });
 
 /* ============================================================
@@ -2216,16 +2468,18 @@ document.querySelectorAll('.seg button[data-view]').forEach(btn => {
     document.querySelectorAll('.seg button[data-view]').forEach(b =>
       b.setAttribute("aria-pressed", String(b === btn)));
     // null-safe: the public build ships without the Plan view
-    ["drill","glossary","plan"].forEach(v => {
+    ["drill","cards","glossary","plan"].forEach(v => {
       const el = $("view-" + v);
       if(el) el.hidden = currentView !== v;
     });
     if(currentView === "glossary") $("gsearch").focus();
+    if(currentView === "cards") renderCard();
     window.scrollTo(0, 0);
   });
 });
 
 renderGlossary("");
+renderCard();
 render();
 </script>
 </body>

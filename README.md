@@ -98,9 +98,29 @@ Set it — month is 0-indexed, so `2` is March — and two things switch on:
 
 Leave it `null` and both features stay off; everything else works unchanged.
 
+## Cards — the one place definition drilling belongs
+
+Everything above is deliberately *not* flashcards, because category judgement isn't a recall task. Acronyms
+are the exception: there's no boundary to reason about, and not knowing what a term expands to means the
+question is lost before your reasoning starts.
+
+So there's a separate **Cards** view — free recall over all 217 acronyms, on a five-box Leitner schedule
+(same session → 1 day → 3 → 7 → 14). You see the acronym, recall the expansion, reveal, then score yourself.
+Knew it moves the card up a box; missed sends it back to box 1. Only cards whose interval has elapsed come
+round, so the pool naturally shrinks as things stick.
+
+Direction is deliberately **acronym → meaning**. On the exam you read `TACACS+` in a stem and need to know
+what it does; you're essentially never asked to go the other way.
+
+Score honestly — if you had to think for more than about three seconds, that's a miss. Self-rated recall is
+exactly where people flatter themselves, and a card you half-knew is a card you won't have under pressure.
+
+`Space` reveals, then `1` for missed and `2` for knew it.
+
 ## Glossary
 
-A second view holds 217 acronyms, searchable across the abbreviation, the expansion *and* the explanation —
+A third view holds all 217 acronyms as a reference list, searchable across the abbreviation, the expansion
+*and* the explanation —
 so searching `kerberos` surfaces KDC, TGT and NTP, not just an exact match. Where an acronym is genuinely
 ambiguous on the exam it says so rather than picking one: MAC has three meanings, RBAC two, SAN and SOC two
 each, and AV means antivirus *or* asset value depending on the domain.
