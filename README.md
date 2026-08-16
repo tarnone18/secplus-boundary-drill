@@ -24,7 +24,7 @@ immediately.
 
 ## What's in it
 
-**47 boundaries · 338 scenarios · 217 acronyms**, covering all five SY0-701 domains.
+**47 boundaries · 338 scenarios · 316 acronyms**, covering all five SY0-701 domains.
 
 | Domain | Boundaries | Scenarios |
 |---|---|---|
@@ -104,10 +104,14 @@ Everything above is deliberately *not* flashcards, because category judgement is
 are the exception: there's no boundary to reason about, and not knowing what a term expands to means the
 question is lost before your reasoning starts.
 
-So there's a separate **Cards** view — free recall over all 217 acronyms, on a five-box Leitner schedule
-(same session → 1 day → 3 → 7 → 14). You see the acronym, recall the expansion, reveal, then score yourself.
-Knew it moves the card up a box; missed sends it back to box 1. Only cards whose interval has elapsed come
-round, so the pool naturally shrinks as things stick.
+So there's a separate **Cards** view — free recall on a five-box Leitner schedule (same session → 1 day → 3 →
+7 → 14). You see the acronym, recall the expansion, reveal, then score yourself. Knew it moves the card up a
+box; missed sends it back to box 1. Only cards whose interval has elapsed come round, so the pool naturally
+shrinks as things stick.
+
+**Cards draw from a 247-entry core, not the full 316.** The remaining 69 are marked reference-only: real
+acronyms, but rare enough that drilling them costs study time better spent elsewhere. They stay fully
+searchable in the glossary, and the **All** pool opts back into them if you want the complete set.
 
 Direction is deliberately **acronym → meaning**. On the exam you read `TACACS+` in a stem and need to know
 what it does; you're essentially never asked to go the other way.
@@ -119,9 +123,8 @@ exactly where people flatter themselves, and a card you half-knew is a card you 
 
 ## Glossary
 
-A third view holds all 217 acronyms as a reference list, searchable across the abbreviation, the expansion
-*and* the explanation —
-so searching `kerberos` surfaces KDC, TGT and NTP, not just an exact match. Where an acronym is genuinely
+A third view holds all 316 acronyms as a reference list, searchable across the abbreviation, the expansion
+*and* the explanation — so searching `kerberos` surfaces KDC, TGT and NTP, not just an exact match. Where an acronym is genuinely
 ambiguous on the exam it says so rather than picking one: MAC has three meanings, RBAC two, SAN and SOC two
 each, and AV means antivirus *or* asset value depending on the domain.
 

@@ -1510,7 +1510,12 @@ const ITEMS = [
 ];
 
 /* ============================================================
-   GLOSSARY — [abbreviation, expansion, optional gloss]
+   GLOSSARY — [abbreviation, expansion, gloss?, refOnly?]
+
+   A 4th element of 0 marks an entry as REFERENCE ONLY: it stays fully
+   searchable here, but is kept out of the default card pools. The glossary
+   is a lookup table, where completeness costs nothing; the cards are study
+   time, where volume does cost. Those are separate decisions.
    ============================================================ */
 const GLOSSARY = [
 ["AAA","Authentication, Authorization, and Accounting","Who are you, what may you do, what did you do. RADIUS and TACACS+ are AAA services."],
@@ -1731,7 +1736,112 @@ const GLOSSARY = [
 ["PEM","Privacy Enhanced Mail","Base64 certificate format, the ----BEGIN CERTIFICATE---- one. DER is the binary equivalent."],
 ["NFC","Near Field Communication","Centimetre-range wireless — contactless payment and badges. Skimming and relay are the attacks."],
 ["CRC","Cyclic Redundancy Check","Detects accidental transmission errors. Not a security control — it stops corruption, not tampering."],
-["OTA","Over the Air","Firmware or config pushed wirelessly. Unsigned OTA updates are an attack path."]
+["OTA","Over the Air","Firmware or config pushed wirelessly. Unsigned OTA updates are an attack path."],
+
+/* --- referenced by the drill itself; their absence was a defect --- */
+["ABAC","Attribute-based Access Control","Access decided from evaluated attributes — department, device, time, sensitivity. The most granular of the models."],
+["UBA","User Behavior Analytics","Baselines normal user behaviour and flags deviation. UEBA extends the same idea to devices and service accounts."],
+["DMZ","Demilitarized Zone","The older name for a screened subnet — the buffer network hosting public-facing services."],
+
+/* --- used in question text and worth knowing cold --- */
+["SSID","Service Set Identifier","The wireless network name. An evil twin clones it; disabling its broadcast is weak security."],
+["SQL","Structured Query Language"],
+["SMB","Server Message Block","Windows file sharing, port 445. The vector for several major worms."],
+["TCP","Transmission Control Protocol","Connection-oriented and acknowledged. UDP is neither."],
+["UDP","User Datagram Protocol","Connectionless. Easy to spoof, which is why it dominates amplification attacks."],
+["HTTP","Hypertext Transfer Protocol","Port 80, unencrypted. HTTPS is the same protocol inside TLS on 443."],
+["LAN","Local Area Network"],
+["WAN","Wide Area Network"],
+["MAN","Metropolitan Area Network"],
+["MPLS","Multiprotocol Label Switching","Carrier WAN transport. SD-WAN often replaces or supplements it."],
+["NAS","Network Attached Storage","File-level storage over the network. A SAN serves block-level."],
+["USB","Universal Serial Bus","Removable media and malicious cables are a named awareness topic."],
+["SMS","Short Message Service","The channel that makes smishing smishing."],
+["MMS","Multimedia Messaging Service"],
+["PIN","Personal Identification Number","A knowledge factor, same category as a password."],
+["GPS","Global Positioning System","Underlies the somewhere-you-are factor and geofencing."],
+["LTE","Long-Term Evolution","Cellular data. A path around corporate controls on a managed device."],
+["SOP","Standard Operating Procedure","The repeatable documented process for a class of change."],
+["FIPS","Federal Information Processing Standards","US government standards. FIPS 140 validation is often contractually required of crypto modules."],
+["CISO","Chief Information Security Officer"],
+["CIO","Chief Information Officer"],
+["CTO","Chief Technology Officer"],
+["ISSO","Information Systems Security Officer"],
+["DBA","Database Administrator","Typically a data custodian, not a data owner."],
+["ISP","Internet Service Provider"],
+["ERP","Enterprise Resource Planning"],
+["CRM","Customer Relationship Management"],
+
+/* --- remaining official-list entries: searchable reference, off the cards --- */
+["BASH","Bourne Again Shell",0],
+["CAR","Corrective Action Report",0],
+["CFB","Cipher Feedback","Block cipher mode operating as a stream.",0],
+["CTM","Counter Mode","Turns a block cipher into a stream cipher using a counter.",0],
+["ECB","Electronic Code Book","The insecure block mode — identical plaintext blocks produce identical ciphertext.",0],
+["CSU","Channel Service Unit",0],
+["DLL","Dynamic Link Library","DLL injection and sideloading are named attack techniques.",0],
+["ESN","Electronic Serial Number",0],
+["FACL","File System Access Control List",0],
+["FPGA","Field Programmable Gate Array","Reconfigurable hardware; sits between a general CPU and a fixed ASIC.",0],
+["GPG","GNU Privacy Guard","Open implementation of the OpenPGP standard.",0],
+["GPU","Graphics Processing Unit","Parallelism is what makes GPUs effective at password cracking.",0],
+["HDD","Hard Disk Drive","Degaussing works on magnetic media; it does nothing to an SSD.",0],
+["SSD","Solid State Drive","Wear levelling means overwriting is unreliable — use crypto-erase or destruction.",0],
+["HTML","Hypertext Markup Language",0],
+["IDEA","International Data Encryption Algorithm",0],
+["IDF","Intermediate Distribution Frame","Floor-level wiring closet. The MDF is the building's main one.",0],
+["MDF","Main Distribution Frame",0],
+["IEEE","Institute of Electrical and Electronics Engineers","Publishes 802.1X, 802.11 and the rest of the 802 series.",0],
+["IM","Instant Messaging",0],
+["KEK","Key Encryption Key","A key whose only job is to protect other keys.",0],
+["LEAP","Lightweight Extensible Authentication Protocol","Cisco's early EAP variant; deprecated.",0],
+["MBR","Master Boot Record","Boot-sector malware targets it; UEFI and GPT replace it.",0],
+["MFD","Multifunction Device","Printer-scanner-copiers hold images on internal storage and are routinely forgotten at disposal.",0],
+["MFP","Multifunction Printer",0],
+["ML","Machine Learning",0],
+["MSCHAP","Microsoft Challenge Handshake Authentication Protocol",0],
+["MTU","Maximum Transmission Unit",0],
+["NTFS","New Technology File System",0],
+["OID","Object Identifier","Used in certificates and SNMP to name things unambiguously.",0],
+["OS","Operating System",0],
+["OSPF","Open Shortest Path First",0],
+["OVAL","Open Vulnerability and Assessment Language","A SCAP component describing how to test for a vulnerability.",0],
+["P12","PKCS #12","Bundles a certificate with its private key. Also seen as .pfx.",0],
+["P2P","Peer to Peer",0],
+["PAC","Proxy Auto Configuration","A hijacked PAC file silently redirects all browser traffic.",0],
+["PBX","Private Branch Exchange",0],
+["PDU","Power Distribution Unit",0],
+["PED","Personal Electronic Device",0],
+["POTS","Plain Old Telephone Service",0],
+["PPP","Point-to-Point Protocol",0],
+["PPTP","Point-to-Point Tunneling Protocol","Obsolete VPN protocol with broken encryption.",0],
+["PUP","Potentially Unwanted Program","Bloatware and adware — unwanted rather than strictly malicious.",0],
+["RAD","Rapid Application Development",0],
+["RAS","Remote Access Server",0],
+["ROI","Return on Investment",0],
+["RTBH","Remotely Triggered Black Hole","Discards attack traffic upstream at the provider.",0],
+["SCEP","Simple Certificate Enrollment Protocol","Automates certificate issuance, commonly via MDM.",0],
+["SDK","Software Development Kit",0],
+["SDLM","Software Development Lifecycle Methodology",0],
+["SEH","Structured Exception Handler","SEH overwrite is a buffer-overflow exploitation technique.",0],
+["SHTTP","Secure Hypertext Transfer Protocol","Historical, and not the same thing as HTTPS.",0],
+["SIM","Subscriber Identity Module","SIM swapping defeats SMS-based multifactor.",0],
+["SOAP","Simple Object Access Protocol",0],
+["SPIM","Spam over Instant Messaging",0],
+["TOC","Time-of-check","The first half of a TOCTOU race condition.",0],
+["TOU","Time-of-use","The second half of a TOCTOU race condition.",0],
+["TSIG","Transaction Signature","Authenticates DNS zone transfers.",0],
+["UAT","User Acceptance Testing",0],
+["UAV","Unmanned Aerial Vehicle",0],
+["UTP","Unshielded Twisted Pair",0],
+["VBA","Visual Basic for Applications","Office macro malware is written in it.",0],
+["VDE","Virtual Desktop Environment",0],
+["VLSM","Variable Length Subnet Masking",0],
+["VTC","Video Teleconferencing",0],
+["WAP","Wireless Access Point",0],
+["WTLS","Wireless Transport Layer Security",0],
+["XOR","Exclusive Or","The bitwise operation underlying stream ciphers and many block modes.",0],
+["XSRF","Cross-Site Request Forgery","Alternative abbreviation for CSRF.",0],
 ];
 
 /* ============================================================
@@ -2266,11 +2376,18 @@ function cardDue(ab){
   const age = daysSince(c.last);
   return age === null || age >= BOX_DAYS[c.box];
 }
+/* Reference-only entries stay searchable in the glossary but are excluded
+   from the default card pools — "All" opts back into them.
+   The 0 marker sits at index 3 when the row has a gloss and at index 2 when
+   it doesn't, so normalise rather than trusting a fixed position. */
+function glossOf(g){ return typeof g[2] === "string" ? g[2] : ""; }
+function isRefOnly(g){ return g[2] === 0 || g[3] === 0; }
+const CARD_CORE = GLOSSARY.filter(g => !isRefOnly(g)).map(g => g[0]);
+
 function cardCandidates(){
-  const all = GLOSSARY.map(g => g[0]);
-  if(cardPool === "all")  return all;
-  if(cardPool === "weak") return all.filter(ab => cardFor(ab).box <= 2 && cardFor(ab).seen > 0);
-  return all.filter(cardDue);                    // "due"
+  if(cardPool === "all")  return GLOSSARY.map(g => g[0]);
+  if(cardPool === "weak") return CARD_CORE.filter(ab => cardFor(ab).box <= 2 && cardFor(ab).seen > 0);
+  return CARD_CORE.filter(cardDue);              // "due"
 }
 
 function pickCard(){
@@ -2298,9 +2415,9 @@ function renderCard(){
   $("cardreveal").style.display = "";
 
   const store = cardStore();
-  const total = GLOSSARY.length;
-  const mastered = GLOSSARY.filter(g => (store[g[0]] || {box:1}).box === 5).length;
-  const due = GLOSSARY.filter(g => cardDue(g[0])).length;
+  const total = CARD_CORE.length;
+  const mastered = CARD_CORE.filter(ab => (store[ab] || {box:1}).box === 5).length;
+  const due = CARD_CORE.filter(cardDue).length;
   $("cardcount").textContent = due + " due · " + mastered + "/" + total + " in box 5";
   $("card-counter").textContent = cardSessionSeen ? cardSessionKnew + " / " + cardSessionSeen + " this session" : "";
 
@@ -2352,11 +2469,11 @@ function renderBoxes(){
   const store = cardStore();
   const counts = [0,0,0,0,0,0];
   let unseen = 0;
-  GLOSSARY.forEach(g => {
-    const c = store[g[0]];
+  CARD_CORE.forEach(ab => {
+    const c = store[ab];
     if(!c || !c.seen) unseen++; else counts[c.box]++;
   });
-  const total = GLOSSARY.length;
+  const total = CARD_CORE.length;
   const band = b => b >= 5 ? "var(--good)" : b >= 3 ? "var(--warning)" : "var(--critical)";
 
   const add = (label, n, colour, note) => {
