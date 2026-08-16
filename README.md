@@ -24,7 +24,7 @@ immediately.
 
 ## What's in it
 
-**47 boundaries · 338 scenarios · 316 acronyms**, covering all five SY0-701 domains.
+**47 boundaries · 338 scenarios · 495 glossary entries**, covering all five SY0-701 domains.
 
 | Domain | Boundaries | Scenarios |
 |---|---|---|
@@ -100,21 +100,28 @@ Leave it `null` and both features stay off; everything else works unchanged.
 
 ## Cards — the one place definition drilling belongs
 
-Everything above is deliberately *not* flashcards, because category judgement isn't a recall task. Acronyms
-are the exception: there's no boundary to reason about, and not knowing what a term expands to means the
-question is lost before your reasoning starts.
+Everything above is deliberately *not* flashcards, because category judgement isn't a recall task. Vocabulary
+is the exception: there's no boundary to reason about, and not knowing what a term means loses the question
+before your reasoning starts.
 
 So there's a separate **Cards** view — free recall on a five-box Leitner schedule (same session → 1 day → 3 →
-7 → 14). You see the acronym, recall the expansion, reveal, then score yourself. Knew it moves the card up a
-box; missed sends it back to box 1. Only cards whose interval has elapsed come round, so the pool naturally
-shrinks as things stick.
+7 → 14). You see the acronym or term, recall the meaning, reveal, then score yourself. Knew it moves the card
+up a box; missed sends it back to box 1. Only cards whose interval has elapsed come round, so the pool
+naturally shrinks as things stick.
 
-**Cards draw from a 247-entry core, not the full 316.** The remaining 69 are marked reference-only: real
-acronyms, but rare enough that drilling them costs study time better spent elsewhere. They stay fully
-searchable in the glossary, and the **All** pool opts back into them if you want the complete set.
+**Cards draw from a 356-entry core, not the full 495**, on two rules:
 
-Direction is deliberately **acronym → meaning**. On the exam you read `TACACS+` in a stem and need to know
-what it does; you're essentially never asked to go the other way.
+- **69 acronyms are marked reference-only** — real, but rare enough that drilling them costs study time
+  better spent elsewhere.
+- **70 terms are excluded because the drill already tests them as judgement.** Hot site, warm site and cold
+  site are a *boundary*; turning them into flashcards would train recognition of the definition, which is
+  exactly the failure mode this tool exists to prevent. That exclusion is computed by checking each term
+  against every boundary's option set, so it can't drift as content is added.
+
+Both stay fully searchable in the glossary, and the **All** pool opts back into everything.
+
+Direction is deliberately **term → meaning**. On the exam you read `TACACS+` in a stem and need to know what
+it does; you're essentially never asked to go the other way.
 
 Score honestly — if you had to think for more than about three seconds, that's a miss. Self-rated recall is
 exactly where people flatter themselves, and a card you half-knew is a card you won't have under pressure.
@@ -123,7 +130,7 @@ exactly where people flatter themselves, and a card you half-knew is a card you 
 
 ## Glossary
 
-A third view holds all 316 acronyms as a reference list, searchable across the abbreviation, the expansion
+A third view holds 316 acronyms and 179 terms as a reference list, searchable across the abbreviation, the expansion
 *and* the explanation — so searching `kerberos` surfaces KDC, TGT and NTP, not just an exact match. Where an acronym is genuinely
 ambiguous on the exam it says so rather than picking one: MAC has three meanings, RBAC two, SAN and SOC two
 each, and AV means antivirus *or* asset value depending on the domain.

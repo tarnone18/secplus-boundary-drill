@@ -261,7 +261,7 @@
     position:sticky;top:0;background:var(--chip);color:var(--muted);
     font-size:11px;font-weight:700;letter-spacing:.09em;padding:5px 24px;
   }
-  .gentry{display:grid;grid-template-columns:104px 1fr;gap:14px;padding:9px 24px;
+  .gentry{display:grid;grid-template-columns:150px 1fr;gap:14px;padding:9px 24px;
     border-bottom:1px solid var(--rule);align-items:baseline}
   .gentry:last-child{border-bottom:0}
   .gab{font-weight:700;font-size:13.5px;letter-spacing:.01em;
@@ -447,6 +447,13 @@
     <input type="search" id="gsearch" class="search" placeholder="Filter by acronym, term or meaning…"
            autocomplete="off" spellcheck="false" aria-label="Filter glossary">
     <span class="gcount" id="gcount"></span>
+  </div>
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Entry type">
+      <button type="button" data-gtype="all" aria-pressed="true">All</button>
+      <button type="button" data-gtype="acronym" aria-pressed="false">Acronyms</button>
+      <button type="button" data-gtype="term" aria-pressed="false">Terms</button>
+    </div>
   </div>
   <div class="glossary" id="glist"></div>
   <p class="foot">
@@ -1845,6 +1852,219 @@ const GLOSSARY = [
 ];
 
 /* ============================================================
+   TERMS — [term, definition, discriminating detail?]
+
+   Non-acronym vocabulary. Card eligibility is computed, not tagged: a term
+   that is already an answer option in a drill boundary stays reference-only,
+   because the drill tests it as a judgement and a flashcard would train
+   recognition of the definition instead. Terms that appear in no boundary
+   are pure recall and become cards.
+   ============================================================ */
+const TERMS = [
+
+/* ---- resilience & recovery ---- */
+["Hot site","A fully equipped alternate facility with data replicated continuously.","Takeover in minutes. Most expensive to hold."],
+["Warm site","An alternate facility with hardware and connectivity in place but stale data.","Recovery in hours to days — backups must be restored first."],
+["Cold site","An alternate facility providing only space, power and connectivity.","Everything must be delivered and installed. Days to weeks."],
+["Geographic dispersion","Placing facilities far enough apart that one event cannot affect both.","About distance between sites, not the readiness of either."],
+["Clustering","Multiple servers acting as one logical system, with failover between them."],
+["Load balancing","Distributing requests across a pool of servers.","Availability and performance; clustering is about failover."],
+["Failover","Automatic switching to a standby system when the primary fails."],
+["Parallel processing","A DR test running the recovery site alongside production without cutting over."],
+["Tabletop exercise","A discussion-based walkthrough of the plan with no systems touched.","Cheapest test; finds gaps in the plan, not in the technology."],
+["Failover test","Actually cutting production over to the recovery site.","The only test that proves the site works."],
+
+/* ---- physical security ---- */
+["Bollard","A short post preventing vehicles reaching a building or entrance.","Preventive by type, physical by category."],
+["Access control vestibule","Two interlocking doors that admit one person at a time.","The structural defence against tailgating. Formerly 'mantrap'."],
+["Tailgating","Following an authorized person through a controlled door.","Piggybacking is the same act with the authorized person's knowledge."],
+["Piggybacking","Entering a controlled area with the authorized person's consent."],
+["Shoulder surfing","Observing a screen or keypad to capture credentials or data."],
+["Dumpster diving","Recovering sensitive information from discarded material.","Shredding and disposal policy are the controls."],
+["Infrared sensor","Detects heat signatures moving through a monitored area."],
+["Pressure sensor","Detects weight or force on a floor or surface."],
+["Microwave sensor","Detects motion by measuring reflected microwave energy."],
+["Ultrasonic sensor","Detects motion by measuring reflected sound waves."],
+["Faraday cage","An enclosure blocking electromagnetic signals in or out."],
+
+/* ---- threat actors & motives ---- */
+["Nation-state","State-sponsored actor with deep resources and long dwell time.","Espionage or disruption; bespoke tooling is the tell."],
+["Hacktivist","Attacker motivated by a political or ideological cause.","Publicity is the objective; no financial demand."],
+["Insider threat","An authorized person misusing their legitimate access."],
+["Organized crime","A structured criminal group motivated by financial gain."],
+["Unskilled attacker","Uses tools built by others without understanding them.","Formerly 'script kiddie'."],
+["Shadow IT","Unsanctioned systems or services adopted inside the organization.","A risk created internally, not an attacker."],
+["Advanced persistent threat","A long-dwell, well-resourced intrusion that avoids detection."],
+
+/* ---- social engineering ---- */
+["Phishing","Fraudulent email sent broadly to harvest credentials or deliver malware."],
+["Spear phishing","Phishing tailored to specific researched individuals."],
+["Whaling","Spear phishing aimed at a senior executive."],
+["Vishing","Social engineering conducted by voice call."],
+["Smishing","Social engineering conducted by SMS."],
+["Pretexting","Inventing a plausible scenario to justify the request.","The backstory manufactures the authority."],
+["Watering hole attack","Compromising a third-party site the targets routinely visit.","The victims are never contacted directly."],
+["Typosquatting","Registering domains close to a legitimate one to catch mistyped traffic."],
+["Brand impersonation","Posing as a trusted company in messaging or a fake site."],
+["Business email compromise","Using a real or spoofed executive account to authorize a fraudulent payment."],
+["Misinformation","False information spread without intent to deceive."],
+["Disinformation","False information spread deliberately to deceive.","Intent is the whole distinction from misinformation."],
+["Impersonation","Claiming to be someone else to gain access or information."],
+
+/* ---- malware ---- */
+["Ransomware","Encrypts data and demands payment for the key."],
+["Trojan","Appears legitimate so the user runs it willingly."],
+["Worm","Self-replicates across a network with no user interaction.","The absence of user action separates it from a virus."],
+["Virus","Attaches to a host file and requires a user to execute it."],
+["Rootkit","Hides its own presence, often at kernel level."],
+["Logic bomb","Dormant code that fires when a condition or date is met."],
+["Keylogger","Records keystrokes to capture credentials."],
+["Spyware","Covertly gathers information about user activity."],
+["Bloatware","Unwanted preinstalled software.","Unwanted rather than malicious — the distinction matters on the exam."],
+["Fileless malware","Runs in memory using legitimate system tools, leaving little on disk."],
+["Command and control","The infrastructure an attacker uses to direct compromised hosts."],
+
+/* ---- attacks ---- */
+["Zero-day","A vulnerability exploited before a patch or signature exists."],
+["On-path attack","The attacker relays traffic between two parties who believe they talk directly.","Formerly man-in-the-middle."],
+["Evil twin","A rogue access point impersonating a legitimate SSID."],
+["Rogue access point","An unauthorized AP genuinely attached to the network.","No impersonation — that is the evil twin."],
+["Deauthentication attack","Forcing wireless clients off so the reconnection can be captured."],
+["Jamming","Flooding a wireless frequency to deny service."],
+["Replay attack","Capturing valid traffic and re-sending it.","Nonces and timestamps are the defence."],
+["Buffer overflow","Writing past allocated memory to alter execution."],
+["Race condition","Exploiting the gap between a check and its use.","Also called TOCTOU."],
+["Privilege escalation","Gaining rights beyond those originally granted."],
+["Directory traversal","Manipulating a path to reach files outside the intended folder."],
+["SQL injection","Input interpreted as database query syntax."],
+["Cross-site scripting","Injected script executes in another user's browser."],
+["Cross-site request forgery","Forcing an authenticated browser to submit an unwanted action."],
+["Side loading","Installing software outside the sanctioned app store or channel."],
+["Jailbreaking","Removing manufacturer restrictions on a mobile device.","Rooting is the Android equivalent."],
+["VM escape","Breaking out of a guest virtual machine to reach the host."],
+["Resource reuse","Data left behind in memory or storage reallocated to another tenant."],
+["Supply chain attack","Compromising a vendor, component or update channel to reach the target."],
+["Password spraying","One common password tried against many accounts.","Goes wide to avoid lockout thresholds."],
+["Credential stuffing","Reusing username and password pairs breached elsewhere."],
+["Pass-the-hash","Authenticating with a captured hash without cracking it."],
+["Birthday attack","Exploiting hash collisions using the birthday paradox."],
+["Downgrade attack","Forcing a weaker protocol or cipher than both parties support."],
+["Amplification attack","Abusing a service that replies with far more data than it receives."],
+["DNS poisoning","Corrupting name resolution so a hostname resolves to the attacker."],
+["ARP poisoning","Forging MAC-to-IP mappings to redirect local traffic."],
+["Bluejacking","Sending unsolicited messages to a nearby Bluetooth device."],
+["Bluesnarfing","Stealing data from a Bluetooth device without authorization.","Snarfing takes data; jacking only sends."],
+
+/* ---- indicators ---- */
+["Impossible travel","Authentications from locations too far apart for the elapsed time."],
+["Concurrent session usage","One account active from multiple sessions or locations at once."],
+["Out-of-cycle logging","Log entries appearing at times that do not match normal activity."],
+["Missing logs","Absent log data, often a sign of an attacker covering tracks."],
+["Account lockout","An account disabled after repeated failed authentications."],
+["Blocked content","Security tooling preventing access to a resource or file."],
+
+/* ---- architecture & network ---- */
+["Air gap","Physical isolation with no network connection of any kind."],
+["Screened subnet","A buffer network hosting public-facing services.","Formerly the DMZ."],
+["Jump server","A hardened, logged host used as the single entry point to a secure zone."],
+["Forward proxy","Sits between internal users and the internet, filtering outbound requests."],
+["Reverse proxy","Sits in front of servers, receiving inbound requests on their behalf."],
+["Fail-open","On failure the device passes traffic.","Favours availability over security."],
+["Fail-closed","On failure the device blocks traffic.","Favours security over availability."],
+["Inline deployment","The device sits in the traffic path and can block."],
+["Tap or monitor deployment","The device receives copied traffic and can only observe."],
+["Containerization","Applications packaged with dependencies sharing one OS kernel.","Lighter than virtualization, weaker isolation."],
+["Virtualization","Multiple guest operating systems on one physical host via a hypervisor."],
+["Type 1 hypervisor","Runs directly on the hardware.","Bare metal; the enterprise form."],
+["Type 2 hypervisor","Runs as an application on a host operating system."],
+["Serverless","Code executed on demand with no infrastructure managed by the customer."],
+["Microservices","An application decomposed into small independently deployable services."],
+["Embedded system","Purpose-built computing inside a larger device."],
+["Software-defined networking","Separating the network control plane from the data plane."],
+["Infrastructure as code","Provisioning defined in version-controlled definition files."],
+["Snapshot","A point-in-time image of a volume or virtual machine."],
+["Journaling","Logging every change so any point in time can be reconstructed."],
+["Replication","Continuously mirroring data to another system as it changes."],
+
+/* ---- data ---- */
+["Data at rest","Stored data not currently moving."],
+["Data in transit","Data actively moving across a network."],
+["Data in use","Data loaded in memory and being processed.","The state plain encryption cannot protect."],
+["Data sovereignty","Data is governed by the laws of the country it resides in."],
+["Data minimization","Collecting only the data actually needed for the stated purpose."],
+["Right to be forgotten","An individual's right to have their personal data erased."],
+["Tokenization","Replacing a value with an unrelated surrogate, mapping held in a vault."],
+["Data masking","Obscuring part of a value for display while the original persists."],
+["Steganography","Concealing data inside another file or medium."],
+["Salting","Adding a unique random value before hashing.","Defeats precomputed rainbow tables."],
+["Key stretching","Deliberately slowing hashing to make brute force expensive."],
+["Key escrow","A third party holds a copy of keys for recovery or legal access."],
+["Certificate pinning","An application accepts only a specific expected certificate or key."],
+["Perfect forward secrecy","Compromise of a long-term key does not expose past sessions."],
+["Root of trust","The trusted anchor a certificate chain validates back to."],
+["Self-signed certificate","Signed by its own key; trusted only where manually installed."],
+["Wildcard certificate","Covers a domain and its first-level subdomains."],
+
+/* ---- governance & risk ---- */
+["Policy","A high-level mandatory statement of intent and responsibility."],
+["Standard","A specific, mandatory, measurable requirement."],
+["Procedure","Ordered steps for carrying out a task."],
+["Guideline","Recommended practice — advisory, not enforced.","The only one of the four that is optional."],
+["Risk appetite","The amount of risk an organization is willing to pursue.","Strategic and broad; tolerance is the operational limit."],
+["Risk tolerance","The acceptable variation around the risk appetite."],
+["Risk threshold","The point at which a risk requires action or escalation."],
+["Risk register","The catalogue of identified risks with owners and treatments."],
+["Key risk indicator","A metric signalling that a risk is increasing."],
+["Inherent risk","Risk before any controls are applied."],
+["Residual risk","Risk remaining after controls are applied."],
+["Control risk","The risk that a control itself fails to operate as intended."],
+["Risk exception","Time-limited approved deviation from a requirement."],
+["Risk exemption","Permanent approved exclusion from a requirement."],
+["Due diligence","Investigation undertaken before a decision or engagement.","The research; due care is the ongoing doing."],
+["Due care","Ongoing reasonable action to protect the organization and its data."],
+["Right-to-audit clause","A contractual term allowing inspection of a vendor's controls."],
+["Rules of engagement","Agreed scope, timing and limits before testing begins."],
+["Attestation","A formal signed assertion that controls are in place."],
+["Conflict of interest","A relationship that could improperly influence a decision."],
+
+/* ---- operations & IR ---- */
+["Legal hold","A directive to preserve data relevant to anticipated litigation.","Overrides normal retention and deletion."],
+["Chain of custody","Documented record of who handled evidence and when."],
+["Order of volatility","The sequence for collecting evidence, most perishable first.","Memory and cache before disk; disk before backups."],
+["E-discovery","Identifying and producing electronic evidence for legal proceedings."],
+["Root cause analysis","Determining the underlying cause rather than the symptom."],
+["Threat hunting","Proactively searching for undetected compromise."],
+["Playbook","A documented sequence of response actions for a specific incident type."],
+["Runbook","Documented operational procedures, often automated."],
+["Least privilege","Granting only the access required to perform the role."],
+["Separation of duties","Splitting a sensitive task so no one person controls it end to end."],
+["Job rotation","Moving staff between roles to surface concealed misuse."],
+["Mandatory vacation","Requiring time off so irregularities surface in a person's absence."],
+["Just-in-time permissions","Elevated access granted only for the moment it is needed."],
+["Password vaulting","Storing privileged credentials centrally, checked out on demand."],
+["Ephemeral credentials","Credentials valid only briefly, then discarded."],
+["Identity proofing","Verifying a person is who they claim before issuing credentials."],
+["Federation","Trusting identities issued by another organization's provider."],
+["Provisioning","Creating an account and granting its access."],
+["Deprovisioning","Removing access when a person leaves or changes role."],
+["Baseline configuration","The approved standard state a system is built and measured against."],
+["Configuration drift","Divergence of a system from its approved baseline over time."],
+["Hardening","Reducing attack surface by removing or disabling what is not needed."],
+["Sanitization","Removing data while leaving the media usable."],
+["Degaussing","Erasing magnetic media with a strong magnetic field.","Useless on solid-state media."],
+["Crypto-erase","Destroying the encryption key so the remaining data is unreadable."],
+["False positive","The tool alerted but the finding is not real."],
+["False negative","The tool did not alert but a real issue exists.","The dangerous one — nothing prompts investigation."],
+["Alert tuning","Adjusting rules to reduce noise without hiding genuine findings."],
+["Bug bounty","Paying external researchers for responsibly disclosed findings."],
+["Known environment test","The tester is given full knowledge of the target.","Formerly white box."],
+["Partially known environment test","The tester is given limited knowledge.","Formerly grey box."],
+["Unknown environment test","The tester is given no prior knowledge.","Formerly black box."],
+["Passive reconnaissance","Gathering information without interacting with the target."],
+["Active reconnaissance","Directly probing the target, which can be detected."]
+];
+
+/* ============================================================
    STATE
    ============================================================ */
 const KEY = "secplus-boundary-drill-v3";
@@ -2382,7 +2602,28 @@ function cardDue(ab){
    it doesn't, so normalise rather than trusting a fixed position. */
 function glossOf(g){ return typeof g[2] === "string" ? g[2] : ""; }
 function isRefOnly(g){ return g[2] === 0 || g[3] === 0; }
-const CARD_CORE = GLOSSARY.filter(g => !isRefOnly(g)).map(g => g[0]);
+
+/* Every label that appears as an answer option in some boundary. A term the
+   drill already tests as a judgement must not also become a flashcard —
+   that would train recognition of the definition, which is the failure mode
+   this whole tool exists to avoid. Computed, so it can never drift. */
+const DRILL_OPTIONS = (() => {
+  const s = new Set();
+  Object.values(B).forEach(b => Object.keys(b.defs).forEach(o => s.add(o.toLowerCase())));
+  return s;
+})();
+
+/* Unified entry list: acronyms and terms in one searchable structure.
+   {k: key, d: definition/expansion, x: extra detail, term: bool, card: bool} */
+const ENTRIES = GLOSSARY.map(g => ({
+    k: g[0], d: g[1], x: glossOf(g), term: false, card: !isRefOnly(g)
+  })).concat(TERMS.map(t => ({
+    k: t[0], d: t[1], x: t[2] || "", term: true,
+    card: !DRILL_OPTIONS.has(t[0].toLowerCase())
+  })));
+
+const CARD_CORE = ENTRIES.filter(e => e.card).map(e => e.k);
+const ENTRY_BY_KEY = new Map(ENTRIES.map(e => [e.k, e]));
 
 function cardCandidates(){
   if(cardPool === "all")  return GLOSSARY.map(g => g[0]);
@@ -2393,8 +2634,11 @@ function cardCandidates(){
 function pickCard(){
   const pool = cardCandidates();
   if(!pool.length) return null;
-  // unseen first, then lowest box, then longest since last seen
-  const scored = pool.map(ab => {
+  // Unseen first, then lowest box, then longest since last seen.
+  // Shuffle before sorting: every unseen card ties on score, and a stable sort
+  // would then hand the whole "neediest" slice to whatever sits first in the
+  // source list — which starved terms behind all 247 acronyms.
+  const scored = shuffle(pool).map(ab => {
     const c = cardFor(ab);
     const age = c.last ? (daysSince(c.last) || 0) : 999;
     return {ab, key: (c.seen === 0 ? -1000 : 0) + c.box * 10 - Math.min(age, 30) / 10};
@@ -2435,12 +2679,14 @@ function renderCard(){
   const empty = face.querySelector(".cardempty");
   if(empty) empty.remove();
 
-  const entry = GLOSSARY.find(g => g[0] === currentCard);
+  const entry = ENTRY_BY_KEY.get(currentCard);
   const c = cardFor(currentCard);
-  $("card-state").textContent = "Recall the expansion · box " + c.box + " of 5";
+  $("card-state").textContent = (entry.term ? "Recall the definition" : "Recall the expansion") +
+                                " · box " + c.box + " of 5";
   $("cardterm").textContent = currentCard;
-  $("cardfull").textContent = entry[1];
-  $("cardgloss").textContent = entry[2] || "";
+  $("cardterm").style.fontSize = currentCard.length > 14 ? "27px" : "40px";
+  $("cardfull").textContent = entry.d;
+  $("cardgloss").textContent = entry.x;
   renderBoxes();
 }
 
@@ -2524,17 +2770,21 @@ document.querySelectorAll('.seg button[data-cards]').forEach(btn => {
    ============================================================ */
 let currentView = "drill";
 
-const sorted = GLOSSARY.slice().sort((a,b) =>
-  a[0].localeCompare(b[0], "en", {sensitivity:"base", numeric:true}));
+let gType = "all";
+const sorted = ENTRIES.slice().sort((a,b) =>
+  a.k.localeCompare(b.k, "en", {sensitivity:"base", numeric:true}));
 
 function renderGlossary(q){
   const list = $("glist");
   const needle = (q||"").trim().toLowerCase();
+  const scope = gType === "all" ? sorted
+              : gType === "term" ? sorted.filter(e => e.term)
+              : sorted.filter(e => !e.term);
   const hits = needle
-    ? sorted.filter(e => (e[0]+" "+e[1]+" "+(e[2]||"")).toLowerCase().includes(needle))
-    : sorted;
+    ? scope.filter(e => (e.k+" "+e.d+" "+e.x).toLowerCase().includes(needle))
+    : scope;
 
-  $("gcount").textContent = hits.length + " of " + sorted.length;
+  $("gcount").textContent = hits.length + " of " + scope.length;
   list.innerHTML = "";
 
   if(!hits.length){
@@ -2547,7 +2797,7 @@ function renderGlossary(q){
 
   let letter = "";
   const frag = document.createDocumentFragment();
-  hits.forEach(([ab, full, gloss]) => {
+  hits.forEach(({k: ab, d: full, x: gloss}) => {
     const L = ab.charAt(0).toUpperCase();
     if(L !== letter){
       letter = L;
@@ -2580,6 +2830,15 @@ function renderGlossary(q){
 }
 
 $("gsearch").addEventListener("input", e => renderGlossary(e.target.value));
+
+document.querySelectorAll('.seg button[data-gtype]').forEach(btn => {
+  btn.addEventListener("click", () => {
+    gType = btn.dataset.gtype;
+    document.querySelectorAll('.seg button[data-gtype]').forEach(b =>
+      b.setAttribute("aria-pressed", String(b === btn)));
+    renderGlossary($("gsearch").value);
+  });
+});
 
 document.querySelectorAll('.seg button[data-view]').forEach(btn => {
   btn.addEventListener("click", () => {
