@@ -219,13 +219,21 @@
     font-family:Georgia,"Iowan Old Style","Palatino Linotype",Palatino,serif;
     font-size:16px;line-height:1.6;margin:0;color:var(--ink-2);
   }
-  .cardscore{display:none;grid-template-columns:1fr 1fr;gap:9px}
+  .cardscore{display:none;grid-template-columns:1fr 1fr 1fr;gap:8px}
   .cardscore.on{display:grid}
   .scoremiss{border-color:var(--critical)}
   .scoremiss:hover:not(:disabled){background:var(--critical-wash);border-color:var(--critical)}
+  .scorepart{border-color:var(--warning)}
+  .scorepart:hover:not(:disabled){background:rgba(250,178,25,.14);border-color:var(--warning)}
   .scoreknew{border-color:var(--good)}
   .scoreknew:hover:not(:disabled){background:var(--good-wash);border-color:var(--good)}
-  .opt.scoremiss,.opt.scoreknew{text-align:center;font-weight:600}
+  .opt.scoremiss,.opt.scorepart,.opt.scoreknew{
+    text-align:center;font-weight:600;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:2px;padding:11px 6px}
+  .opt.scoremiss small,.opt.scorepart small,.opt.scoreknew small{
+    font-weight:600;font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .scorehint{margin:0;font-size:11.5px;line-height:1.5;color:var(--muted)}
+  .scorehint b{color:var(--ink-2);font-weight:650}
   .boxrow .nm b{font-variant-numeric:tabular-nums}
   .cardempty{text-align:center;color:var(--muted);font-size:14px;padding:28px 10px;line-height:1.6}
 
@@ -418,15 +426,21 @@
 
     <button type="button" class="next" id="cardreveal">Reveal</button>
     <div class="cardscore" id="cardscore">
-      <button type="button" class="opt scoremiss" id="cardmiss">Missed it</button>
-      <button type="button" class="opt scoreknew" id="cardknew">Knew it</button>
+      <button type="button" class="opt scoremiss" id="cardmiss">Missed<small>1</small></button>
+      <button type="button" class="opt scorepart" id="cardpart">Partly<small>2</small></button>
+      <button type="button" class="opt scoreknew" id="cardknew">Knew it<small>3</small></button>
     </div>
+    <p class="scorehint">
+      <b>Partly</b> = you named the right thing but missed what separates it from its neighbours.
+      Couldn't place it at all? That's <b>missed</b>. Partly drops the card a box — it never advances one.
+    </p>
   </div>
 
   <div class="stats">
     <h2>Card progress</h2>
-    <p class="lede">Five boxes. Knew it moves a card up, missed sends it back to box 1. Higher boxes come
-      round less often — box 5 is once a fortnight.</p>
+    <p class="lede">Five boxes. Knew it moves a card up, partly drops it one, missed sends it back to box 1.
+      Higher boxes come round less often — box 5 is once a fortnight.</p>
+    <div class="alarm" id="partalarm"></div>
     <div class="rows" id="boxrows"></div>
     <p class="foot" style="margin-top:14px">
       <b>Score yourself honestly.</b> If you had to think for more than about three seconds, that's a miss.
@@ -2551,8 +2565,9 @@ document.addEventListener("keydown", e => {
     // space or enter reveals; then 1 = missed, 2 = knew
     if((e.key === " " || e.key === "Enter") && !cardRevealed){ e.preventDefault(); revealCard(); return; }
     if(cardRevealed){
-      if(e.key === "1"){ e.preventDefault(); scoreCard(false); }
-      if(e.key === "2"){ e.preventDefault(); scoreCard(true); }
+      if(e.key === "1"){ e.preventDefault(); scoreCard("miss"); }
+      if(e.key === "2"){ e.preventDefault(); scoreCard("part"); }
+      if(e.key === "3"){ e.preventDefault(); scoreCard("knew"); }
     }
     return;
   }
@@ -2579,7 +2594,7 @@ const BOX_DAYS = [0, 0, 1, 3, 7, 14];   // index = box number, 1..5
 let cardPool = "due";
 let currentCard = null;
 let cardRevealed = false;
-let cardSessionSeen = 0, cardSessionKnew = 0;
+let cardSessionSeen = 0, cardSessionKnew = 0, cardSessionPart = 0;
 
 function cardStore(){
   if(!stats.__cards) stats.__cards = {};
@@ -2587,7 +2602,8 @@ function cardStore(){
 }
 function cardFor(ab){
   const s = cardStore();
-  if(!s[ab]) s[ab] = {box:1, last:null, seen:0, right:0};
+  if(!s[ab]) s[ab] = {box:1, last:null, seen:0, right:0, part:0};
+  if(s[ab].part === undefined) s[ab].part = 0;   // tolerate older saved shapes
   return s[ab];
 }
 function cardDue(ab){
@@ -2663,7 +2679,9 @@ function renderCard(){
   const mastered = CARD_CORE.filter(ab => (store[ab] || {box:1}).box === 5).length;
   const due = CARD_CORE.filter(cardDue).length;
   $("cardcount").textContent = due + " due · " + mastered + "/" + total + " in box 5";
-  $("card-counter").textContent = cardSessionSeen ? cardSessionKnew + " / " + cardSessionSeen + " this session" : "";
+  $("card-counter").textContent = cardSessionSeen
+    ? cardSessionKnew + " knew · " + cardSessionPart + " partly · " + cardSessionSeen + " seen"
+    : "";
 
   if(!currentCard){
     $("cardterm").textContent = "";
@@ -2698,18 +2716,50 @@ function revealCard(){
   document.getElementById("cardscore").classList.add("on");
 }
 
-function scoreCard(knew){
+/* grade: "miss" | "part" | "knew"
+   Partial must cost something, or it becomes the button everything lands on
+   and cards advance on knowledge that isn't there. So it drops a box — a
+   real penalty, but softer than the full reset a miss earns. It can never
+   promote. */
+function scoreCard(grade){
   if(!currentCard || !cardRevealed) return;
   const c = cardFor(currentCard);
-  c.seen++; if(knew) c.right++;
-  c.box = knew ? Math.min(5, c.box + 1) : 1;
+  c.seen++;
+  if(grade === "knew"){ c.right++; c.box = Math.min(5, c.box + 1); }
+  else if(grade === "part"){ c.part++; c.box = Math.max(1, c.box - 1); }
+  else { c.box = 1; }
   c.last = todayISO();
-  cardSessionSeen++; if(knew) cardSessionKnew++;
+
+  cardSessionSeen++;
+  if(grade === "knew") cardSessionKnew++;
+  else if(grade === "part") cardSessionPart++;
   save();
   renderCard();
 }
 
+/* The middle button is the one that rots a self-graded deck. If most answers
+   land in "partly", either the grading has gone soft or the definitions are
+   too long to recall whole — both worth knowing, neither visible from the
+   box counts alone. */
+function renderPartAlarm(){
+  const el = document.getElementById("partalarm");
+  const store = cardStore();
+  let seen = 0, part = 0;
+  Object.values(store).forEach(c => { seen += c.seen || 0; part += c.part || 0; });
+
+  if(seen < 30){ el.className = "alarm"; el.innerHTML = ""; return; }
+  const rate = part / seen;
+  if(rate < 0.45){ el.className = "alarm"; el.innerHTML = ""; return; }
+
+  el.className = "alarm on warn";
+  el.innerHTML = '<span class="mark">!</span><span><b>' + Math.round(rate * 100) +
+    "% of your answers are 'partly'.</b> That is high enough to suspect the button is absorbing " +
+    "answers that belong in <b>missed</b>. The test is whether you could have separated the term from " +
+    "its nearest neighbour — if not, it's a miss. Partly is for a real near-hit, not a soft landing.</span>";
+}
+
 function renderBoxes(){
+  renderPartAlarm();
   const rows = document.getElementById("boxrows");
   rows.innerHTML = "";
   const store = cardStore();
@@ -2749,11 +2799,12 @@ function renderBoxes(){
 }
 
 document.getElementById("cardreveal").addEventListener("click", revealCard);
-document.getElementById("cardknew").addEventListener("click", () => scoreCard(true));
-document.getElementById("cardmiss").addEventListener("click", () => scoreCard(false));
+document.getElementById("cardknew").addEventListener("click", () => scoreCard("knew"));
+document.getElementById("cardpart").addEventListener("click", () => scoreCard("part"));
+document.getElementById("cardmiss").addEventListener("click", () => scoreCard("miss"));
 document.getElementById("cardreset").addEventListener("click", () => {
   stats.__cards = {}; save();
-  cardSessionSeen = 0; cardSessionKnew = 0;
+  cardSessionSeen = 0; cardSessionKnew = 0; cardSessionPart = 0;
   renderCard();
 });
 document.querySelectorAll('.seg button[data-cards]').forEach(btn => {

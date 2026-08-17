@@ -105,9 +105,21 @@ is the exception: there's no boundary to reason about, and not knowing what a te
 before your reasoning starts.
 
 So there's a separate **Cards** view — free recall on a five-box Leitner schedule (same session → 1 day → 3 →
-7 → 14). You see the acronym or term, recall the meaning, reveal, then score yourself. Knew it moves the card
-up a box; missed sends it back to box 1. Only cards whose interval has elapsed come round, so the pool
-naturally shrinks as things stick.
+7 → 14). You see the acronym or term, recall the meaning, reveal, then grade yourself. Only cards whose
+interval has elapsed come round, so the pool naturally shrinks as things stick.
+
+Grading is three-state, and the middle one costs you:
+
+| | Effect |
+|---|---|
+| **Missed** | back to box 1 |
+| **Partly** | **down one box** — a real penalty, and it can never promote |
+| **Knew it** | up one box |
+
+**Partly** means you named the right thing but missed what separates it from its neighbours. "A hot site is a
+backup facility" is partly — the discriminating detail *is* the testable content. Couldn't place it at all?
+That's missed. The middle button is what rots a self-graded deck, so if more than 45% of your answers land
+there the tool says so.
 
 **Cards draw from a 356-entry core, not the full 495**, on two rules:
 
@@ -123,10 +135,10 @@ Both stay fully searchable in the glossary, and the **All** pool opts back into 
 Direction is deliberately **term → meaning**. On the exam you read `TACACS+` in a stem and need to know what
 it does; you're essentially never asked to go the other way.
 
-Score honestly — if you had to think for more than about three seconds, that's a miss. Self-rated recall is
+Grade honestly — if you had to think for more than about three seconds, that's at best a partly. Self-rated recall is
 exactly where people flatter themselves, and a card you half-knew is a card you won't have under pressure.
 
-`Space` reveals, then `1` for missed and `2` for knew it.
+`Space` reveals, then `1` missed, `2` partly, `3` knew it.
 
 ## Glossary
 
