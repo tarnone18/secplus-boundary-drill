@@ -116,6 +116,11 @@ Grading is three-state, and the middle one costs you:
 | **Partly** | **down one box** — a real penalty, and it can never promote |
 | **Knew it** | up one box |
 
+There is also a **Hint** button. It reveals the opening of the definition — enough to cue retrieval, not
+enough to hand over the discriminating detail. Taking one **caps the grade at Partly**: the "Knew it" button
+disappears rather than being left available and unenforced, because cued recall is easier than what the exam
+asks for and shouldn't earn the same promotion. Hint usage is tracked per card.
+
 **Partly** means you named the right thing but missed what separates it from its neighbours. "A hot site is a
 backup facility" is partly — the discriminating detail *is* the testable content. Couldn't place it at all?
 That's missed. The middle button is what rots a self-graded deck, so if more than 45% of your answers land
@@ -138,7 +143,7 @@ it does; you're essentially never asked to go the other way.
 Grade honestly — if you had to think for more than about three seconds, that's at best a partly. Self-rated recall is
 exactly where people flatter themselves, and a card you half-knew is a card you won't have under pressure.
 
-`Space` reveals, then `1` missed, `2` partly, `3` knew it.
+`H` hints, `Space` reveals, then `1` missed, `2` partly, `3` knew it.
 
 ## Glossary
 
