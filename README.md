@@ -24,7 +24,7 @@ immediately.
 
 ## What's in it
 
-**47 boundaries · 338 scenarios · 495 glossary entries**, covering all five SY0-701 domains.
+**47 boundaries · 338 scenarios · 495 glossary entries · 44 ports**, covering all five SY0-701 domains.
 
 | Domain | Boundaries | Scenarios |
 |---|---|---|
@@ -126,7 +126,32 @@ backup facility" is partly — the discriminating detail *is* the testable conte
 That's missed. The middle button is what rots a self-graded deck, so if more than 45% of your answers land
 there the tool says so.
 
-**Cards draw from a 356-entry core, not the full 495**, on two rules:
+### Ports
+
+Ports are the one thing here drilled in **both directions**, because the exam asks both ways with equal
+frequency — *"which port does RDP use"* and *"traffic was observed on 3389"*. Each of the 44 port rows
+yields a port → protocol card and a protocol → port card with **independent Leitner boxes**, since the
+two directions are not equally hard. That's 90 cards, in their own **Ports** pool so they don't dilute
+the daily queue.
+
+Transport is drilled as hard as the number, because objective 4.5 carries a literal *"Transport method"*
+bullet alongside *"Port selection"*. Taking a hint on a port card reveals the **transport**, not the
+opening of the answer — a prefix hint would simply hand over the number.
+
+Four cards have no port at all: **ICMP** (IP protocol 1), **ESP** (50), **AH** (51) and **GRE** (47) are
+IP protocols, not ports. *"Which port does ping use"* has no valid answer, and that's the point of
+carding them.
+
+The list was verified against CompTIA's published objectives and the IANA registry rather than assembled
+from roundups. A few things that fell out of that: 514/UDP is syslog but **514/TCP is `shell` (rsh)**;
+989/990 is the most misreported pair in circulation (990 is control, 989 is data); SNMPv3 secures SNMP on
+the **same** port, so any answer offering a different one is wrong; and CompTIA's acronym list expands
+FTPS and SFTP with a byte-identical string, so those two can only be separated by mechanism — SSH 22
+versus TLS 990 — never by name.
+
+### What's excluded, and why
+
+**Cards draw from a 446-entry core, not the full 585**, on two rules:
 
 - **69 acronyms are marked reference-only** — real, but rare enough that drilling them costs study time
   better spent elsewhere.
@@ -135,7 +160,7 @@ there the tool says so.
   exactly the failure mode this tool exists to prevent. That exclusion is computed by checking each term
   against every boundary's option set, so it can't drift as content is added.
 
-Both stay fully searchable in the glossary, and the **All** pool opts back into everything.
+Both stay fully searchable in the glossary, and the **All** pool opts back into everything — all 585 entries, ports included.
 
 Direction is deliberately **term → meaning**. On the exam you read `TACACS+` in a stem and need to know what
 it does; you're essentially never asked to go the other way.
@@ -147,7 +172,7 @@ exactly where people flatter themselves, and a card you half-knew is a card you 
 
 ## Glossary
 
-A third view holds 316 acronyms and 179 terms as a reference list, searchable across the abbreviation, the expansion
+A third view holds 316 acronyms, 179 terms and the port entries as a reference list, searchable across the abbreviation, the expansion
 *and* the explanation — so searching `kerberos` surfaces KDC, TGT and NTP, not just an exact match. Where an acronym is genuinely
 ambiguous on the exam it says so rather than picking one: MAC has three meanings, RBAC two, SAN and SOC two
 each, and AV means antivirus *or* asset value depending on the domain.
@@ -167,7 +192,6 @@ persist for a downloaded local copy; serve it over `http(s)` if you want progres
   none of them. Source real PBQ practice separately.
 - **It is not a question bank.** There's no timed full-length mode and no score prediction. It targets one
   specific weakness; use real practice exams to measure readiness.
-- **Ports and protocols are not drilled.** That's recall rather than judgement and doesn't fit the format.
 - Content was written against the published SY0-701 objectives. Verify anything that matters against
   CompTIA's current objectives document — exam versions change.
 

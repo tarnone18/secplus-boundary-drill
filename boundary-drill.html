@@ -425,6 +425,7 @@
     <div class="seg" role="group" aria-label="Card pool">
       <button type="button" data-cards="due" aria-pressed="true">Due</button>
       <button type="button" data-cards="weak" aria-pressed="false">Weak only</button>
+      <button type="button" data-cards="ports" aria-pressed="false">Ports</button>
       <button type="button" data-cards="all" aria-pressed="false">All</button>
     </div>
     <span class="gcount" id="cardcount"></span>
@@ -2107,6 +2108,69 @@ const TERMS = [
 ["Active reconnaissance","Directly probing the target, which can be detected."]
 ];
 
+/* Ports. Deliberately NOT drill boundaries — there is no line to reason about,
+   only recall, which is exactly the case the Cards view exists for.
+
+   Drilled in BOTH directions, unlike every other card: the exam asks "which
+   port does RDP use" and "traffic was seen on 3389" with equal frequency, so
+   each row yields a port->protocol card and a protocol->port card with
+   independent Leitner boxes. The two directions are not equally hard.
+
+   Transport is drilled as hard as the number because objective 4.5 carries a
+   literal "Transport method" bullet alongside "Port selection".
+
+   [port, protocol, transport, note]  — transport: "TCP" | "UDP" | "TCP/UDP" | "" */
+const PORTS = [
+["20","FTP data","TCP","Active-mode data channel. Passive mode uses an ephemeral port instead, which is why passive FTP is firewall-hostile. 21 carries commands, 20 carries bytes."],
+["21","FTP control","TCP","The command channel, and what a firewall question means by \"FTP\". Credentials cross in cleartext. Explicit FTPS (AUTH TLS) also runs here on 21, not on 990."],
+["22","SSH","TCP","One port, three valid answers — SSH, SFTP and SCP all ride it. The universal \"which secure protocol replaces Telnet\" answer."],
+["22","SFTP","TCP","An SSH subsystem, NOT \"FTP with SSL\". CompTIA's acronym list expands SFTP and FTPS identically, so separate them by mechanism — SSH 22 vs TLS 990 — never by name."],
+["22","SCP","TCP","Secure copy over SSH. Same port, same session, superseded by SFTP in practice."],
+["23","Telnet","TCP","Cleartext remote terminal and the canonical \"replace this protocol\" item. Answer: SSH on 22."],
+["25","SMTP","TCP","Server-to-server relay, cleartext, commonly blocked outbound by ISPs. If the stem says a mail CLIENT is sending, the answer is 587, not 25."],
+["49","TACACS+","TCP","Encrypts the ENTIRE payload and separates authentication, authorization and accounting. TCP here vs RADIUS on UDP is the tested contrast."],
+["53","DNS","TCP/UDP","The genuine both-transports card. UDP for ordinary queries, TCP for zone transfers and oversized responses. \"UDP only\" is wrong."],
+["67","DHCP server","UDP","Server listens on 67, and a rogue DHCP server answers from 67. Mitigation is DHCP snooping on trusted ports."],
+["68","DHCP client","UDP","Client listens on 68. The attack here is DHCP starvation — flooding DISCOVERs to exhaust the pool. The rogue server belongs to 67."],
+["69","TFTP","UDP","No authentication and no encryption at all — the tested weakness against FTP. Used for PXE boot and firmware. No \"TFTPS\" exists; replace with SFTP/SCP."],
+["80","HTTP","TCP","Cleartext web, answered by redirecting to 443 with HSTS. Often left open deliberately to carry OCSP and SCEP certificate checks."],
+["88","Kerberos","TCP/UDP","UDP traditionally, TCP when the ticket exceeds the datagram limit. Depends on accurate time — clock skew breaks Kerberos before anything else."],
+["110","POP3","TCP","Downloads mail and classically removes it from the server, with no cross-device sync. That is the IMAP contrast."],
+["123","NTP","UDP","The exam angle is the dependency, not the number: clock skew breaks Kerberos and certificate validity and destroys log correlation. Also a DDoS amplification vector."],
+["137","NetBIOS name","UDP","Legacy name service, superseded by SMB on 445."],
+["138","NetBIOS datagram","UDP","Legacy datagram service, superseded by SMB on 445."],
+["139","NetBIOS session","TCP","SMB over NetBIOS — the legacy path. 445 is SMB direct over TCP."],
+["143","IMAP","TCP","Leaves mail on the server and syncs state across devices — the POP3 contrast. Genuinely TCP-only."],
+["161","SNMP","UDP","The manager POLLS the agent here. v1/v2c send cleartext community strings; SNMPv3 fixes that on the SAME port, so any answer offering a different port for \"secure SNMP\" is wrong."],
+["162","SNMP trap","UDP","The agent PUSHES unsolicited alerts to the manager — the opposite direction to 161, and that direction is the tested distinction."],
+["389","LDAP","TCP/UDP","TCP is the answer. UDP 389 is connectionless LDAP (CLDAP), a reflection vector. StartTLS secures 389 in place, so \"LDAP is always insecure\" is wrong."],
+["443","HTTPS","TCP","Answer TCP, but know the exceptions: HTTP/3 (QUIC) is UDP 443, and DoH, TLS VPNs and C2 beaconing all hide here — the stated rationale for TLS inspection."],
+["445","SMB","TCP","Windows file and printer sharing direct over TCP, without NetBIOS. The EternalBlue and WannaCry lateral-movement port, and the stock \"block at the perimeter\" answer."],
+["465","SMTPS","TCP","IMPLICIT TLS from the first byte. 465 vs 587 is implicit vs explicit, not secure vs insecure."],
+["500","IKE","UDP","IPSec phase-1 key negotiation only. The ESP and AH payloads are IP protocol numbers 50 and 51, not ports."],
+["514","Syslog","UDP","Card this as 514/UDP specifically — 514/TCP is registered to \"shell\" (Berkeley rsh), a different service entirely. Cleartext and unreliable, feeding the SIEM."],
+["587","SMTP submission","TCP","Authenticated client-to-server submission, starting cleartext and upgrading via STARTTLS — explicit TLS. If both appear, 465 is SMTPS and 587 is submission."],
+["636","LDAPS","TCP","Implicit TLS from connect, and the archetypal 389-to-636 pair. Never IETF-standardised; the standards-track route is StartTLS on 389."],
+["989","FTPS data","TCP","Implicit-TLS data channel. 989/990 is the single most misreported pair in third-party lists — 990 is control, 989 is data."],
+["990","FTPS control","TCP","Implicit-TLS control channel mirroring 21, so FTPS keeps FTP's two-channel design unlike SFTP's single SSH session. If a question offers both 990 and 22: 990 is FTPS, 22 is SFTP."],
+["993","IMAPS","TCP","Mnemonic is alphabetical — IMAPS before POP3S, so 993 before 995 — because the numeric order inverts against the cleartext pair (110 < 143 but 993 < 995)."],
+["995","POP3S","TCP","Answer TCP. Note the asymmetry the mail block hides: a legacy 995/udp registration exists, so do not generalise \"TCP-only\" across all four mail ports."],
+["1433","MS-SQL","TCP","A database listener that should never be internet-facing, and an SQL-injection exfiltration target. Neighbour UDP 1434 is the SQL Server Browser that SQL Slammer exploited."],
+["1701","L2TP","UDP","Provides NO encryption on its own — that is the entire exam point. Deployed as L2TP/IPSec, which is why 500 and 4500 appear in the same firewall rule."],
+["1723","PPTP","TCP","Control connection on TCP 1723 with data over GRE (IP protocol 47). Cryptographically broken via MS-CHAPv2 — the answer is always to replace it, never to harden it."],
+["1812","RADIUS auth","UDP","Encrypts ONLY the password attribute, where TACACS+ encrypts the whole payload. That plus UDP-vs-TCP is the tested contrast. The 802.1X back end."],
+["1813","RADIUS accounting","UDP","The accounting half of AAA sits on its own port, and that separation is the tested fact. Legacy 1645/1646 are pure distractors."],
+["3389","RDP","TCP","Answer TCP, though modern clients add an optional UDP transport. Exposed RDP is the top brute-force and ransomware entry vector — answer with a VPN or jump host, never internet-facing."],
+["4500","IPSec NAT-T","UDP","Encapsulates ESP inside UDP so IPSec survives NAT, always opened alongside 500. It wraps ESP rather than AH precisely because AH breaks when NAT rewrites the header."],
+["5060","SIP","TCP/UDP","Cleartext VoIP call SETUP only — SIP signals, RTP carries the media on separately negotiated ports."],
+["5061","SIPS","TCP","TLS-protected VoIP signalling, so TCP. Pair it conceptually with RTP-to-SRTP, which covers the media half."],
+["6514","Syslog over TLS","TCP","The answer to \"how do you protect logs in transit to the SIEM\" — confidentiality, integrity and reliable delivery."],
+["—","ICMP","","Trick card: ICMP has NO PORTS. It sits beside TCP (6) and UDP (17) as IP protocol 1, using type and code fields instead. \"Which port does ping use\" has no valid answer."],
+["—","ESP","","Trick card: IP protocol 50, not a port. Encrypts and authenticates. The IPSec payload that survives NAT when wrapped by NAT-T on 4500."],
+["—","AH","","Trick card: IP protocol 51, not a port. Authenticates only, no encryption — and BREAKS through NAT, because NAT rewrites the header fields AH authenticates."],
+["—","GRE","","Trick card: IP protocol 47, not a port. Tunnels with no encryption at all — pair it with IPSec for confidentiality. Carries PPTP's data channel."]
+];
+
 /* ============================================================
    STATE
    ============================================================ */
@@ -2630,6 +2694,14 @@ let hintUsed = false;
    enough to hand over the discriminating detail, which is the part the exam
    actually scores. Derived, so every entry has one with no extra authoring. */
 function hintFor(entry){
+  // A port card's answer is "22 — TCP": the generic prefix hint would hand over
+  // the number outright. The transport is the right cue — it narrows the field
+  // hard (almost everything is TCP, so "UDP" is genuinely informative) without
+  // being the answer.
+  if(entry.port){
+    const t = entry.d.split("—").pop().trim();
+    return t && t !== "see below" ? "transport is " + t : "no port at all — it is an IP protocol";
+  }
   const words = entry.d.split(/\s+/);
   // a one-word definition has no word-level hint to give — cue on characters
   if(words.length === 1){
@@ -2687,12 +2759,56 @@ const ENTRIES = GLOSSARY.map(g => ({
     card: !DRILL_OPTIONS.has(t[0].toLowerCase())
   })));
 
-const CARD_CORE = ENTRIES.filter(e => e.card).map(e => e.k);
-const ENTRY_BY_KEY = new Map(ENTRIES.map(e => [e.k, e]));
+/* Port entries, built in BOTH directions.
+
+   Keys must not collide with the glossary — "SSH" already exists there as an
+   acronym card testing the expansion, which is a different question from the
+   port. So the protocol->port key is suffixed, and it sorts adjacent to its
+   acronym in the glossary rather than overwriting it in ENTRY_BY_KEY.
+
+   `front` is what the card face shows; `k` is only the identity used for the
+   Leitner store and the lookup map. */
+const PORT_ENTRIES = (() => {
+  const out = [];
+  const numbered = PORTS.filter(p => p[0] !== "—");
+
+  // port -> protocol, one card per distinct port (22 legitimately has three answers)
+  const byPort = new Map();
+  numbered.forEach(p => {
+    if(!byPort.has(p[0])) byPort.set(p[0], []);
+    byPort.get(p[0]).push(p);
+  });
+  byPort.forEach((rows, port) => {
+    out.push({
+      k: "Port " + port, front: port, dir: "toProto",
+      d: rows.map(r => r[1]).join(" · ") + " — " + rows[0][2],
+      x: rows.map(r => r[3]).join(" "),
+      term: false, card: true, port: true
+    });
+  });
+
+  // protocol -> port, one card per row, including the no-port trick cards
+  PORTS.forEach(p => {
+    out.push({
+      k: p[1] + " (port)", front: p[1], dir: "toPort",
+      d: p[0] === "—" ? "No port — see below" : p[0] + " — " + p[2],
+      x: p[3], term: false, card: true, port: true
+    });
+  });
+  return out;
+})();
+
+const ALL_ENTRIES = ENTRIES.concat(PORT_ENTRIES);
+const CARD_CORE = ALL_ENTRIES.filter(e => e.card).map(e => e.k);
+const PORT_CARDS = PORT_ENTRIES.map(e => e.k);
+const ENTRY_BY_KEY = new Map(ALL_ENTRIES.map(e => [e.k, e]));
 
 function cardCandidates(){
-  if(cardPool === "all")  return GLOSSARY.map(g => g[0]);
-  if(cardPool === "weak") return CARD_CORE.filter(ab => cardFor(ab).box <= 2 && cardFor(ab).seen > 0);
+  // "all" previously returned GLOSSARY keys only, which silently dropped every
+  // term — the opposite of what the label promises. It now means everything.
+  if(cardPool === "all")   return ALL_ENTRIES.map(e => e.k);
+  if(cardPool === "ports") return PORT_CARDS.filter(cardDue);
+  if(cardPool === "weak")  return CARD_CORE.filter(ab => cardFor(ab).box <= 2 && cardFor(ab).seen > 0);
   return CARD_CORE.filter(cardDue);              // "due"
 }
 
@@ -2731,9 +2847,12 @@ function renderCard(){
   $("cardscore").style.gridTemplateColumns = "1fr 1fr 1fr";
 
   const store = cardStore();
-  const total = CARD_CORE.length;
-  const mastered = CARD_CORE.filter(ab => (store[ab] || {box:1}).box === 5).length;
-  const due = CARD_CORE.filter(cardDue).length;
+  // scope the counter to the pool being drilled, or "446 due" shows up while
+  // you are working through the 90 ports
+  const counted = cardPool === "ports" ? PORT_CARDS : CARD_CORE;
+  const total = counted.length;
+  const mastered = counted.filter(ab => (store[ab] || {box:1}).box === 5).length;
+  const due = counted.filter(cardDue).length;
   $("cardcount").textContent = due + " due · " + mastered + "/" + total + " in box 5";
   $("card-counter").textContent = cardSessionSeen
     ? cardSessionKnew + " knew · " + cardSessionPart + " partly · " + cardSessionSeen + " seen"
@@ -2747,6 +2866,8 @@ function renderCard(){
     if(!empty){ empty = document.createElement("div"); empty.className = "cardempty"; face.appendChild(empty); }
     empty.innerHTML = cardPool === "due"
       ? "Nothing due right now — the boxes are doing their job.<br>Switch to <b>All</b> if you want to keep going anyway."
+      : cardPool === "ports"
+      ? "No ports due — every one is inside its box interval.<br>Switch to <b>All</b> to run them regardless."
       : "No cards in this pool yet. Answer some in <b>Due</b> first.";
     return;
   }
@@ -2755,10 +2876,14 @@ function renderCard(){
 
   const entry = ENTRY_BY_KEY.get(currentCard);
   const c = cardFor(currentCard);
-  $("card-state").textContent = (entry.term ? "Recall the definition" : "Recall the expansion") +
-                                " · box " + c.box + " of 5";
-  $("cardterm").textContent = currentCard;
-  $("cardterm").style.fontSize = currentCard.length > 14 ? "27px" : "40px";
+  const face_ = entry.front || entry.k;
+  const task = entry.dir === "toProto" ? "Recall the protocol and transport"
+             : entry.dir === "toPort"  ? "Recall the port and transport"
+             : entry.term              ? "Recall the definition"
+             :                           "Recall the expansion";
+  $("card-state").textContent = task + " · box " + c.box + " of 5";
+  $("cardterm").textContent = face_;
+  $("cardterm").style.fontSize = face_.length > 14 ? "27px" : "40px";
   $("cardfull").textContent = entry.d;
   $("cardgloss").textContent = entry.x;
   // every carded acronym now carries an explanation, but a term may not —
@@ -2772,7 +2897,9 @@ function showHint(){
   if(!currentCard || cardRevealed || hintUsed) return;
   hintUsed = true;
   const entry = ENTRY_BY_KEY.get(currentCard);
-  $("cardhint").innerHTML = "<b>Starts:</b> " + hintFor(entry);
+  // "Starts:" describes a prefix hint and reads wrong on a port card, whose
+  // hint is the transport rather than the opening of the answer
+  $("cardhint").innerHTML = "<b>" + (entry.port ? "Hint:" : "Starts:") + "</b> " + hintFor(entry);
   $("cardhint").classList.add("on");
   $("cardhintbtn").disabled = true;
 }
@@ -2903,7 +3030,7 @@ document.querySelectorAll('.seg button[data-cards]').forEach(btn => {
 let currentView = "drill";
 
 let gType = "all";
-const sorted = ENTRIES.slice().sort((a,b) =>
+const sorted = ALL_ENTRIES.slice().sort((a,b) =>
   a.k.localeCompare(b.k, "en", {sensitivity:"base", numeric:true}));
 
 function renderGlossary(q){
