@@ -298,6 +298,30 @@
   .gtx b{font-weight:600}
   .gtx span{color:var(--ink-2)}
   .gempty{padding:24px;text-align:center;color:var(--muted);font-size:13.5px}
+
+  /* Ports get a table rather than the definition-list shape: the value is
+     scanning a column of numbers, which the two-column entry layout destroys. */
+  .prow{display:grid;grid-template-columns:74px 132px 62px 1fr;gap:14px;
+    padding:9px 24px;border-bottom:1px solid var(--rule);align-items:baseline}
+  .prow:last-child{border-bottom:0}
+  .phead{position:sticky;top:0;background:var(--chip);color:var(--muted);
+    font-size:11px;font-weight:700;letter-spacing:.09em;padding:6px 24px;
+    display:grid;grid-template-columns:74px 132px 62px 1fr;gap:14px}
+  .pport{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;
+    letter-spacing:.01em}
+  .pproto{font-size:13.5px;font-weight:600;overflow-wrap:anywhere}
+  .ptrans{font-size:10.5px;font-weight:700;letter-spacing:.06em;
+    padding:2px 6px;border-radius:5px;justify-self:start;white-space:nowrap}
+  .t-tcp{background:rgba(96,165,250,.16);color:#7fb0ff}
+  .t-udp{background:rgba(245,197,24,.16);color:#e0b21c}
+  .t-both{background:rgba(52,211,153,.16);color:#4cc79a}
+  .t-none{background:var(--chip);color:var(--muted)}
+  .pnote{font-size:13px;line-height:1.5;color:var(--ink-2)}
+  @media (max-width:640px){
+    .prow,.phead{grid-template-columns:60px 1fr 58px}
+    .pnote{grid-column:1 / -1;padding-top:2px}
+    .phead span:nth-child(4){display:none}
+  }
   @media (max-width:520px){
     .gentry{grid-template-columns:1fr;gap:2px;padding:10px 16px}
     .gletter{padding:5px 16px}
@@ -488,7 +512,7 @@
 
 <div id="view-glossary" hidden>
   <div class="controls">
-    <input type="search" id="gsearch" class="search" placeholder="Filter by acronym, term or meaning…"
+    <input type="search" id="gsearch" class="search" placeholder="Filter by acronym, term, port or meaning…"
            autocomplete="off" spellcheck="false" aria-label="Filter glossary">
     <span class="gcount" id="gcount"></span>
   </div>
@@ -497,6 +521,7 @@
       <button type="button" data-gtype="all" aria-pressed="true">All</button>
       <button type="button" data-gtype="acronym" aria-pressed="false">Acronyms</button>
       <button type="button" data-gtype="term" aria-pressed="false">Terms</button>
+      <button type="button" data-gtype="ports" aria-pressed="false">Ports</button>
     </div>
   </div>
   <div class="glossary" id="glist"></div>
@@ -3029,12 +3054,93 @@ document.querySelectorAll('.seg button[data-cards]').forEach(btn => {
 let currentView = "drill";
 
 let gType = "all";
-const sorted = ALL_ENTRIES.slice().sort((a,b) =>
+/* ENTRIES, not ALL_ENTRIES: ports live in their own tab and are deliberately
+   kept out of the acronym and term lists. Interleaving 90 "Port 445" rows
+   among the acronyms buries both. */
+const sorted = ENTRIES.slice().sort((a,b) =>
   a.k.localeCompare(b.k, "en", {sensitivity:"base", numeric:true}));
+
+/* Port number ascending, with the four no-port entries (ICMP, ESP, AH, GRE)
+   collected at the end rather than sorted as NaN. */
+const PORTS_SORTED = PORTS.slice().sort((a,b) => {
+  const na = parseInt(a[0], 10), nb = parseInt(b[0], 10);
+  if(isNaN(na) && isNaN(nb)) return a[1].localeCompare(b[1]);
+  if(isNaN(na)) return 1;
+  if(isNaN(nb)) return -1;
+  return na - nb || a[1].localeCompare(b[1]);
+});
+
+function transportClass(t){
+  return t === "TCP" ? "t-tcp" : t === "UDP" ? "t-udp"
+       : t === "TCP/UDP" ? "t-both" : "t-none";
+}
+
+function renderPortTable(needle){
+  const list = $("glist");
+  let hits = needle
+    ? PORTS_SORTED.filter(p => (p[0]+" "+p[1]+" "+p[2]+" "+p[3]).toLowerCase().includes(needle))
+    : PORTS_SORTED;
+
+  /* Searching "445" matched 137, 138 and 139 first, because their notes mention
+     445 — the number you actually wanted came fourth. For a lookup table that is
+     backwards, so an exact port hit floats to the top. Notes still match, they
+     just rank below. */
+  if(needle && /^\d+$/.test(needle)){
+    hits = hits.slice().sort((a, b) =>
+      (b[0] === needle ? 1 : 0) - (a[0] === needle ? 1 : 0));
+  }
+
+  $("gcount").textContent = hits.length + " of " + PORTS_SORTED.length;
+  list.innerHTML = "";
+
+  if(!hits.length){
+    const e = document.createElement("div");
+    e.className = "gempty";
+    e.textContent = "No port matches “" + needle + "”.";
+    list.appendChild(e);
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  const head = document.createElement("div");
+  head.className = "phead";
+  ["Port", "Protocol", "Transport", "Notes"].forEach(h => {
+    const s = document.createElement("span");
+    s.textContent = h;
+    head.appendChild(s);
+  });
+  frag.appendChild(head);
+
+  hits.forEach(([port, proto, trans, note]) => {
+    const row = document.createElement("div");
+    row.className = "prow";
+
+    const p = document.createElement("div");
+    p.className = "pport";
+    p.textContent = port;
+
+    const n = document.createElement("div");
+    n.className = "pproto";
+    n.textContent = proto;
+
+    const t = document.createElement("div");
+    t.className = "ptrans " + transportClass(trans);
+    t.textContent = trans || "no port";
+
+    const d = document.createElement("div");
+    d.className = "pnote";
+    d.textContent = note;
+
+    row.appendChild(p); row.appendChild(n); row.appendChild(t); row.appendChild(d);
+    frag.appendChild(row);
+  });
+  list.appendChild(frag);
+}
 
 function renderGlossary(q){
   const list = $("glist");
   const needle = (q||"").trim().toLowerCase();
+  if(gType === "ports") return renderPortTable(needle);
   const scope = gType === "all" ? sorted
               : gType === "term" ? sorted.filter(e => e.term)
               : sorted.filter(e => !e.term);

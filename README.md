@@ -172,10 +172,24 @@ exactly where people flatter themselves, and a card you half-knew is a card you 
 
 ## Glossary
 
-A third view holds 316 acronyms, 179 terms and the port entries as a reference list, searchable across the abbreviation, the expansion
-*and* the explanation — so searching `kerberos` surfaces KDC, TGT and NTP, not just an exact match. Where an acronym is genuinely
-ambiguous on the exam it says so rather than picking one: MAC has three meanings, RBAC two, SAN and SOC two
-each, and AV means antivirus *or* asset value depending on the domain.
+A third view holds 316 acronyms and 179 terms as a reference list, searchable across the abbreviation, the
+expansion *and* the explanation — so searching `kerberos` surfaces KDC, TGT and NTP, not just an exact
+match. Where an acronym is genuinely ambiguous on the exam it says so rather than picking one: MAC has
+three meanings, RBAC two, SAN and SOC two each, and AV means antivirus *or* asset value depending on the
+domain.
+
+**Ports get their own tab**, as a table rather than the definition-list layout — port, protocol, transport
+and note in fixed columns, sorted by number, with the transport colour-coded so a column of TCP/UDP can be
+scanned at a glance. Interleaving 48 port rows among the acronyms buried both, so they are deliberately
+absent from the All, Acronyms and Terms tabs.
+
+The four no-port entries — ICMP, ESP, AH and GRE — sort to the bottom and are labelled `no port` rather
+than given a fake number.
+
+Search covers the notes as well as the numbers, so `kerberos` finds port 88 *and* NTP on 123, whose note
+explains that clock skew breaks Kerberos first. A purely numeric search floats the exact port to the top:
+typing `445` would otherwise return 137, 138 and 139 ahead of it, since their notes mention being
+superseded by 445.
 
 ## Usage
 
